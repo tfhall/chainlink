@@ -34,7 +34,7 @@ export default {
       },
       {path: '/signin'},
       {path: '/signout'},
-      {is404: true, component: 'src/containers/404'}
+      {path: '404', component: 'src/containers/404'}
     ]
   },
   renderToHtml: (render, Comp, meta) => {
