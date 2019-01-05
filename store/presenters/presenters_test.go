@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/smartcontractkit/chainlink/internal/cltest"
+	"github.com/smartcontractkit/chainlink/store/assets"
 	"github.com/smartcontractkit/chainlink/store/models"
 	"github.com/smartcontractkit/chainlink/store/presenters"
 	"github.com/stretchr/testify/assert"
@@ -73,8 +74,9 @@ func TestPresenterShowEthBalance_WithEmptyAccount(t *testing.T) {
 	t.Parallel()
 	app, cleanup := cltest.NewApplicationWithKeyStore()
 	defer cleanup()
-	_, err := presenters.ShowEthBalance(app.Store)
+	kvs, err := presenters.ShowEthBalance(app.Store)
 	assert.Error(t, err)
+	assert.Len(t, kvs, 0)
 }
 
 func TestPresenterShowEthBalance_WithAccount(t *testing.T) {
@@ -89,6 +91,7 @@ func TestPresenterShowEthBalance_WithAccount(t *testing.T) {
 
 	kvs, err := presenters.ShowEthBalance(app.Store)
 	assert.NoError(t, err)
+	require.Len(t, kvs, 1)
 	kv := kvs[0]
 	addr := cltest.GetAccountAddress(app.Store).Hex()
 	want := fmt.Sprintf("ETH Balance for %v: 0.000000000000000256", addr)
@@ -152,17 +155,18 @@ func TestPresenter_FriendlyBigInt(t *testing.T) {
 func TestBridgeType_MarshalJSON(t *testing.T) {
 	t.Parallel()
 	input := models.BridgeType{
-		Name:          models.MustNewTaskType("hapax"),
-		URL:           cltest.WebURL("http://hap.ax"),
-		Confirmations: 0,
-		IncomingToken: "123",
-		OutgoingToken: "abc",
+		Name:                   models.MustNewTaskType("hapax"),
+		URL:                    cltest.WebURL("http://hap.ax"),
+		Confirmations:          0,
+		IncomingToken:          "123",
+		OutgoingToken:          "abc",
+		MinimumContractPayment: *assets.NewLink(0),
 	}
-	expected := []byte(`{"name":"hapax","url":"http://hap.ax","confirmations":0,"incomingToken":"123","outgoingToken":"abc","minimumContractPayment":"0"}`)
 	bt := presenters.BridgeType{BridgeType: input}
 	output, err := bt.MarshalJSON()
 	assert.NoError(t, err)
-	assert.Equal(t, output, expected)
+	expected := `{"name":"hapax","url":"http://hap.ax","confirmations":0,"incomingToken":"123","outgoingToken":"abc","minimumContractPayment":"0"}`
+	assert.Equal(t, expected, string(output))
 }
 
 func TestServiceAgreement_MarshalJSON(t *testing.T) {
@@ -188,7 +192,7 @@ func TestPresenter_NewConfigWhitelist_Ok(t *testing.T) {
 	cw, err := presenters.NewConfigWhitelist(store)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "0x3cb8e3FD9d27e39a5e9e6852b0e96160061fd4ea", cw.AccountAddress)
+	assert.Contains(t, cw.String(), "0x3cb8e3FD9d27e39a5e9e6852b0e96160061fd4ea")
 }
 
 func TestPresenter_NewConfigWhitelist_Error(t *testing.T) {
@@ -201,6 +205,5 @@ func TestPresenter_NewConfigWhitelist_Error(t *testing.T) {
 
 	cw, err := presenters.NewConfigWhitelist(store)
 	assert.Error(t, err)
-
 	assert.Equal(t, "", cw.AccountAddress)
 }

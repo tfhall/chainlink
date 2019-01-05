@@ -11,6 +11,7 @@ import (
 	"math/big"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
@@ -58,24 +59,26 @@ func showBalanceFor(store *store.Store, balanceType requestType) ([]map[string]i
 	for _, account := range store.KeyStore.Accounts() {
 		b, err := showBalanceForAccount(store, account, balanceType)
 		merr = multierr.Append(merr, err)
-		info = append(info, b)
+		if err == nil {
+			info = append(info, b)
+		}
 	}
 	return info, merr
 }
 
 // ShowEthBalance returns the current Eth Balance for current Account
 func showBalanceForAccount(store *store.Store, account accounts.Account, balanceType requestType) (map[string]interface{}, error) {
-	keysAndValues := make(map[string]interface{})
 	balance, err := getBalance(store, account, balanceType)
 	if err != nil {
-		return keysAndValues, err
+		return nil, err
 	}
 	address := account.Address
+	keysAndValues := make(map[string]interface{})
 	keysAndValues["message"] = fmt.Sprintf("%v Balance for %v: %v", balance.Symbol(), address.Hex(), balance.String())
 	keysAndValues["balance"] = balance.String()
 	keysAndValues["address"] = address
 	if balance.IsZero() && balanceType == ethRequest {
-		return keysAndValues, errors.New("0 ETH Balance. Chainlink node not fully functional, please deposit ETH into your address: " + address.Hex())
+		return nil, errors.New("0 ETH Balance. Chainlink node not fully functional, please deposit ETH into your address: " + address.Hex())
 	}
 	return keysAndValues, nil
 }
@@ -140,11 +143,11 @@ type ConfigWhitelist struct {
 
 type whitelist struct {
 	AllowOrigins             string          `json:"allowOrigins"`
-	BridgeResponseURL        models.WebURL   `json:"bridgeResponseURL,omitempty"`
+	BridgeResponseURL        string          `json:"bridgeResponseURL,omitempty"`
 	ChainID                  uint64          `json:"ethChainId"`
 	Dev                      bool            `json:"chainlinkDev"`
 	ClientNodeURL            string          `json:"clientNodeUrl"`
-	DatabaseTimeout          store.Duration  `json:"databaseTimeout"`
+	DatabaseTimeout          time.Duration   `json:"databaseTimeout"`
 	EthereumURL              string          `json:"ethUrl"`
 	EthGasBumpThreshold      uint64          `json:"ethGasBumpThreshold"`
 	EthGasBumpWei            *big.Int        `json:"ethGasBumpWei"`
@@ -159,9 +162,9 @@ type whitelist struct {
 	MinOutgoingConfirmations uint64          `json:"minOutgoingConfirmations"`
 	OracleContractAddress    *common.Address `json:"oracleContractAddress"`
 	Port                     uint16          `json:"chainlinkPort"`
-	ReaperExpiration         store.Duration  `json:"reaperExpiration"`
+	ReaperExpiration         time.Duration   `json:"reaperExpiration"`
 	RootDir                  string          `json:"root"`
-	SessionTimeout           store.Duration  `json:"sessionTimeout"`
+	SessionTimeout           time.Duration   `json:"sessionTimeout"`
 	TLSHost                  string          `json:"chainlinkTLSHost"`
 	TLSPort                  uint16          `json:"chainlinkTLSPort"`
 }
@@ -177,31 +180,31 @@ func NewConfigWhitelist(store *store.Store) (ConfigWhitelist, error) {
 	return ConfigWhitelist{
 		AccountAddress: account.Address.Hex(),
 		whitelist: whitelist{
-			AllowOrigins:             config.AllowOrigins,
-			BridgeResponseURL:        config.BridgeResponseURL,
-			ChainID:                  config.ChainID,
-			Dev:                      config.Dev,
-			ClientNodeURL:            config.ClientNodeURL,
-			DatabaseTimeout:          config.DatabaseTimeout,
-			EthereumURL:              config.EthereumURL,
-			EthGasBumpThreshold:      config.EthGasBumpThreshold,
-			EthGasBumpWei:            &config.EthGasBumpWei,
-			EthGasPriceDefault:       &config.EthGasPriceDefault,
-			JSONConsole:              config.JSONConsole,
-			LinkContractAddress:      config.LinkContractAddress,
-			LogLevel:                 config.LogLevel,
-			LogToDisk:                config.LogToDisk,
-			MinimumContractPayment:   &config.MinimumContractPayment,
-			MinimumRequestExpiration: config.MinimumRequestExpiration,
-			MinIncomingConfirmations: config.MinIncomingConfirmations,
-			MinOutgoingConfirmations: config.MinOutgoingConfirmations,
-			OracleContractAddress:    config.OracleContractAddress,
-			Port:                     config.Port,
-			ReaperExpiration:         config.ReaperExpiration,
-			RootDir:                  config.RootDir,
-			SessionTimeout:           config.SessionTimeout,
-			TLSHost:                  config.TLSHost,
-			TLSPort:                  config.TLSPort,
+			AllowOrigins:             config.AllowOrigins(),
+			BridgeResponseURL:        config.BridgeResponseURL().String(),
+			ChainID:                  config.ChainID(),
+			Dev:                      config.Dev(),
+			ClientNodeURL:            config.ClientNodeURL(),
+			DatabaseTimeout:          config.DatabaseTimeout(),
+			EthereumURL:              config.EthereumURL(),
+			EthGasBumpThreshold:      config.EthGasBumpThreshold(),
+			EthGasBumpWei:            config.EthGasBumpWei(),
+			EthGasPriceDefault:       config.EthGasPriceDefault(),
+			JSONConsole:              config.JSONConsole(),
+			LinkContractAddress:      config.LinkContractAddress(),
+			LogLevel:                 config.LogLevel(),
+			LogToDisk:                config.LogToDisk(),
+			MinimumContractPayment:   config.MinimumContractPayment(),
+			MinimumRequestExpiration: config.MinimumRequestExpiration(),
+			MinIncomingConfirmations: config.MinIncomingConfirmations(),
+			MinOutgoingConfirmations: config.MinOutgoingConfirmations(),
+			OracleContractAddress:    config.OracleContractAddress(),
+			Port:                     config.Port(),
+			ReaperExpiration:         config.ReaperExpiration(),
+			RootDir:                  config.RootDir(),
+			SessionTimeout:           config.SessionTimeout(),
+			TLSHost:                  config.TLSHost(),
+			TLSPort:                  config.TLSPort(),
 		},
 	}, nil
 }
@@ -210,7 +213,9 @@ func NewConfigWhitelist(store *store.Store) (ConfigWhitelist, error) {
 func (c ConfigWhitelist) String() string {
 	var buffer bytes.Buffer
 
-	schemaT := reflect.TypeOf(store.Config{})
+	buffer.WriteString(fmt.Sprintf("ACCOUNT_ADDRESS: %v\n", c.AccountAddress))
+
+	schemaT := reflect.TypeOf(store.ConfigSchema{})
 	cwlT := reflect.TypeOf(c.whitelist)
 	cwlV := reflect.ValueOf(c.whitelist)
 	for index := 0; index < cwlT.NumField(); index++ {

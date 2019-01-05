@@ -78,6 +78,9 @@ func passwordFromFile(pwdFile string) (string, error) {
 
 func logIfNonceOutOfSync(store *strpkg.Store) {
 	account := store.TxManager.NextActiveAccount()
+	if account == nil {
+		return
+	}
 	lastNonce, err := store.GetLastNonce(account.Address)
 	if err != nil {
 		logger.Error("database error when checking nonce: ", err)
@@ -99,7 +102,7 @@ func localNonceIsNotCurrent(lastNonce, nonce uint64) bool {
 
 func updateConfig(config strpkg.Config, debug bool) strpkg.Config {
 	if debug {
-		config.LogLevel = strpkg.LogLevel{Level: zapcore.DebugLevel}
+		config.Set("LogLevel", zapcore.DebugLevel.String())
 	}
 	return config
 }
