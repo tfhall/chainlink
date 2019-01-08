@@ -15,7 +15,7 @@ export default {
     return [
       { path: '/' },
       { path: '/jobs' },
-      { path: '/jobs/page/_jobPage_' },
+      { path: '/jobs/page/_jobsPage_' },
       { path: '/jobs/new' },
       { path: '/jobs/_jobSpecId_' },
       { path: '/jobs/_jobSpecId_/definition' },
@@ -28,6 +28,8 @@ export default {
       { path: '/bridges/new' },
       { path: '/bridges/_bridgeId_' },
       { path: '/bridges/_bridgeId_/edit' },
+      { path: '/transactions' },
+      { path: '/transactions/page/_transactionsPage_' },
       {
         path: '/config',
         getData: () => buildInfo

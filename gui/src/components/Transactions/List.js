@@ -1,6 +1,5 @@
 import React from 'react'
 import PropTypes from 'prop-types'
-import { useHooks, useState, useEffect } from 'use-react-hooks'
 import Card from '@material-ui/core/Card'
 import Table from '@material-ui/core/Table'
 import TableBody from '@material-ui/core/TableBody'
@@ -9,12 +8,11 @@ import TableHead from '@material-ui/core/TableHead'
 import TableRow from '@material-ui/core/TableRow'
 import TablePagination from '@material-ui/core/TablePagination'
 import Typography from '@material-ui/core/Typography'
-import { formatInitiators } from 'utils/jobSpecInitiators'
-import TableButtons, { FIRST_PAGE } from 'components/TableButtons'
 import Link from 'components/Link'
-import TimeAgo from 'components/TimeAgo'
+import TableButtons, { FIRST_PAGE } from 'components/TableButtons'
+import { useHooks, useState, useEffect } from 'use-react-hooks'
 
-const renderBody = (jobs, error) => {
+const renderBody = (transactions, error) => {
   if (error) {
     return (
       <TableRow>
@@ -23,29 +21,22 @@ const renderBody = (jobs, error) => {
         </TableCell>
       </TableRow>
     )
-  } else if (jobs && jobs.length === 0) {
+  } else if (transactions && transactions.length === 0) {
     return (
       <TableRow>
         <TableCell component='th' scope='row' colSpan={3}>
-          You haven't created any jobs yet. Create a new job <Link to={`/jobs/new`}>here</Link>
+          You haven't created any transactions yet.
         </TableCell>
       </TableRow>
     )
-  } else if (jobs) {
-    return jobs.map(j => (
-      <TableRow key={j.id}>
+  } else if (transactions) {
+    return transactions.map(j => (
+      <TableRow key={j.hash}>
         <TableCell component='th' scope='row'>
-          <Link to={`/jobs/${j.id}`}>{j.id}</Link>
+          <Link to={`/transactions/${j.hash}`}>{j.hash}</Link>
         </TableCell>
         <TableCell>
-          <Typography variant='body1'>
-            <TimeAgo>{j.createdAt}</TimeAgo>
-          </Typography>
-        </TableCell>
-        <TableCell>
-          <Typography variant='body1'>
-            {formatInitiators(j.initiators)}
-          </Typography>
+          <Typography variant='body1'>{j.txId}</Typography>
         </TableCell>
       </TableRow>
     ))
@@ -63,23 +54,23 @@ const renderBody = (jobs, error) => {
 export const List = useHooks(props => {
   const [ page, setPage ] = useState(FIRST_PAGE)
   useEffect(() => {
-    const queryPage = (props.match && parseInt(props.match.params.jobsPage, 10)) || FIRST_PAGE
+    const queryPage = (props.match && parseInt(props.match.params.transactionsPage, 10)) || FIRST_PAGE
     setPage(queryPage)
-    fetchJobs(queryPage, pageSize)
+    fetchTransactions(queryPage, pageSize)
   }, [])
-  const { jobs, jobCount, fetchJobs, pageSize, error } = props
+  const { transactions, count, fetchTransactions, pageSize, error } = props
   const handleChangePage = (e, page) => {
-    fetchJobs(page, pageSize)
+    fetchTransactions(page, pageSize)
     setPage(page)
   }
   const TableButtonsWithProps = () => (
     <TableButtons
       {...props}
-      count={jobCount}
+      count={count}
       onChangePage={handleChangePage}
       rowsPerPage={pageSize}
       page={page}
-      replaceWith={`/jobs/page`}
+      replaceWith={`/transactions/page`}
     />
   )
 
@@ -89,23 +80,20 @@ export const List = useHooks(props => {
         <TableHead>
           <TableRow>
             <TableCell>
-              <Typography variant='body1' color='textSecondary'>ID</Typography>
+              <Typography variant='body1' color='textSecondary'>Hash</Typography>
             </TableCell>
             <TableCell>
-              <Typography variant='body1' color='textSecondary'>Created</Typography>
-            </TableCell>
-            <TableCell>
-              <Typography variant='body1' color='textSecondary'>Initiator</Typography>
+              <Typography variant='body1' color='textSecondary'>Nonce</Typography>
             </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {renderBody(jobs, error)}
+          {renderBody(transactions, error)}
         </TableBody>
       </Table>
       <TablePagination
         component='div'
-        count={jobCount}
+        count={count}
         rowsPerPage={pageSize}
         rowsPerPageOptions={[pageSize]}
         page={page - 1}
@@ -115,15 +103,14 @@ export const List = useHooks(props => {
       />
     </Card>
   )
-}
-)
+})
 
 List.propTypes = {
-  jobs: PropTypes.array,
-  jobCount: PropTypes.number.isRequired,
+  count: PropTypes.number.isRequired,
   pageSize: PropTypes.number.isRequired,
-  error: PropTypes.string,
-  fetchJobs: PropTypes.func.isRequired
+  fetchTransactions: PropTypes.func.isRequired,
+  transactions: PropTypes.array,
+  error: PropTypes.string
 }
 
 export default List
