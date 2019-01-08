@@ -368,3 +368,10 @@ export const fetchTransactions = (page, size) => request(
   json => normalize(json, { endpoint: 'currentPageTransactions' }),
   page, size
 )
+
+export const fetchTransaction = id => request(
+  'TRANSACTION',
+  api.getTransaction,
+  json => normalize(json),
+  id
+)

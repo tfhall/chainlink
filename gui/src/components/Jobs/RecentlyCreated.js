@@ -2,7 +2,6 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import Typography from '@material-ui/core/Typography'
 import Grid from '@material-ui/core/Grid'
-import CardContent from '@material-ui/core/CardContent'
 import TableCell from '@material-ui/core/TableCell'
 import TableRow from '@material-ui/core/TableRow'
 import TimeAgo from 'components/TimeAgo'
@@ -17,9 +16,7 @@ const RecentlyCreated = ({ jobs }) => {
     status = (
       <TableRow>
         <TableCell scope='row'>
-          <CardContent>
-            <Typography variant='body1' color='textSecondary'>...</Typography>
-          </CardContent>
+          <Typography variant='body1' color='textSecondary'>...</Typography>
         </TableCell>
       </TableRow>
     )
@@ -27,11 +24,9 @@ const RecentlyCreated = ({ jobs }) => {
     status = (
       <TableRow>
         <TableCell scope='row'>
-          <CardContent>
-            <Typography variant='body1' color='textSecondary'>
-              No recently created jobs
-            </Typography>
-          </CardContent>
+          <Typography variant='body1' color='textSecondary'>
+            No recently created jobs
+          </Typography>
         </TableCell>
       </TableRow>
     )
