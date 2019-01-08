@@ -172,9 +172,6 @@ func v2Routes(app services.Application, engine *gin.Engine) {
 		w := WithdrawalsController{app}
 		authv2.POST("/withdrawals", w.Create)
 
-		backup := BackupController{app}
-		authv2.GET("/backup", backup.Show)
-
 		cc := ConfigController{app}
 		authv2.GET("/config", cc.Show)
 
