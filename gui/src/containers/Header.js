@@ -22,7 +22,7 @@ import Logo from 'components/Logo'
 import AvatarMenu from 'components/AvatarMenu'
 import { submitSignOut } from 'actions'
 import fetchCountSelector from 'selectors/fetchCount'
-import ReactResizeDetector from 'react-resize-detector';
+import ReactResizeDetector from 'react-resize-detector'
 
 const drawerWidth = 240
 
@@ -109,20 +109,21 @@ const Header = useHooks(props => {
     </div>
   </Drawer>)
 
-  const nav = (<Typography variant='body1' component='div'>
-    <List className={classes.horizontalNav}>
-      {SHARED_NAV_ITEMS.map(([to, text]) => (
-        <ListItem key={to} className={classes.horizontalNavItem}>
-          <Link to={to} className={classes.horizontalNavLink}>{text}</Link>
-        </ListItem>
-      ))}
-      {props.authenticated &&
-        <ListItem className={classes.horizontalNavItem}>
-          <AvatarMenu />
-        </ListItem>
-      }
-    </List>
-  </Typography>
+  const nav = (
+    <Typography variant='body1' component='div'>
+      <List className={classes.horizontalNav}>
+        {SHARED_NAV_ITEMS.map(([to, text]) => (
+          <ListItem key={to} className={classes.horizontalNavItem}>
+            <Link to={to} className={classes.horizontalNavLink}>{text}</Link>
+          </ListItem>
+        ))}
+        {props.authenticated &&
+          <ListItem className={classes.horizontalNavItem}>
+            <AvatarMenu />
+          </ListItem>
+        }
+      </List>
+    </Typography>
   )
 
   return (
@@ -131,7 +132,13 @@ const Header = useHooks(props => {
       color='default'
       position='absolute'
     >
-      <ReactResizeDetector handleHeight skipOnMount onResize={props.onResize}>
+      <ReactResizeDetector
+        refreshMode='debounce'
+        refreshRate={200}
+        onResize={props.onResize}
+        handleHeight
+        skipOnMount
+      >
         <LoadingBar fetchCount={fetchCount} />
 
         <Toolbar className={classes.toolbar}>
@@ -157,10 +164,10 @@ const Header = useHooks(props => {
             </Grid>
           </Grid>
         </Toolbar>
-        <Portal container={props.drawerContainer}>
-          {drawer}
-        </Portal>
       </ReactResizeDetector>
+      <Portal container={props.drawerContainer}>
+        {drawer}
+      </Portal>
     </AppBar>
   )
 }
