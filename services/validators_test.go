@@ -185,9 +185,9 @@ func TestValidateServiceAgreement(t *testing.T) {
 		{"more than one initiator should fail",
 			basic.Add("initiators",
 				[]models.Initiator{
-					{0, "", models.InitiatorServiceAgreementExecutionLog,
+					{utils.NewBytes32ID(), "", models.InitiatorServiceAgreementExecutionLog,
 						models.InitiatorParams{}},
-					{0, "", models.InitiatorWeb, models.InitiatorParams{}},
+					{utils.NewBytes32ID(), "", models.InitiatorWeb, models.InitiatorParams{}},
 				}),
 			true},
 	}

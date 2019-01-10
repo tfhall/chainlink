@@ -186,8 +186,8 @@ func (txm *EthTxManager) createTxWithNonceReload(
 		var txa *models.TxAttempt
 		txa, err = txm.createAttempt(tx, gasPriceWei, blkNum)
 		if err != nil {
-			txm.orm.DeleteStruct(tx)
-			txm.orm.DeleteStruct(txa)
+			txm.orm.DB.Delete(tx) // TODO: Place inside ORM
+			txm.orm.DB.Delete(txa)
 
 			return fmt.Errorf("TxManager CreateTX %v", err)
 		}
@@ -461,7 +461,7 @@ func (txm *EthTxManager) bumpGas(txat *models.TxAttempt, blkNum uint64) error {
 	if err != nil {
 		return err
 	}
-	gasPrice := new(big.Int).Add(txat.GasPrice, txm.config.EthGasBumpWei())
+	gasPrice := new(big.Int).Add(txat.GasPrice.ToInt(), txm.config.EthGasBumpWei())
 	bumpedTxAt, err := txm.createAttempt(tx, gasPrice, blkNum)
 	if err != nil {
 		return err

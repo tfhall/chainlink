@@ -67,7 +67,7 @@ func NewRun(
 
 	cost := assets.NewLink(0)
 	for i, taskRun := range run.TaskRuns {
-		adapter, err := adapters.For(taskRun.Task, store)
+		adapter, err := adapters.For(taskRun.TaskSpec, store)
 
 		if err != nil {
 			run = run.ApplyResult(run.Result.WithError(err))
@@ -80,7 +80,7 @@ func NewRun(
 		if currentHeight != nil {
 			run.TaskRuns[i].MinimumConfirmations = utils.MaxUint64(
 				store.Config.MinIncomingConfirmations(),
-				taskRun.Task.Confirmations,
+				taskRun.TaskSpec.Confirmations,
 				adapter.MinConfs())
 		}
 	}
@@ -90,7 +90,7 @@ func NewRun(
 		if cost.Cmp(input.Amount) > 0 {
 			logger.Debugw("Rejecting run with insufficient payment", []interface{}{
 				"run", run.ID,
-				"job", run.JobID,
+				"job", run.JobSpecID,
 				"input_amount", input.Amount,
 				"required_amount", cost,
 			}...)
@@ -146,14 +146,14 @@ func ResumeConfirmingTask(
 	if meetsMinimumConfirmations(run, currentTaskRun, run.ObservedHeight) {
 		logger.Debugw("Minimum confirmations met, resuming job", []interface{}{
 			"run", run.ID,
-			"job", run.JobID,
+			"job", run.JobSpecID,
 			"observed_height", currentBlockHeight,
 		}...)
 		run.Status = models.RunStatusInProgress
 	} else {
 		logger.Debugw("Insufficient confirmations to wake job", []interface{}{
 			"run", run.ID,
-			"job", run.JobID,
+			"job", run.JobSpecID,
 			"observed_height", currentBlockHeight,
 		}...)
 		run.Status = models.RunStatusPendingConfirmations
@@ -194,7 +194,7 @@ func ResumePendingTask(
 
 	logger.Debugw("External adapter resuming job", []interface{}{
 		"run", run.ID,
-		"job", run.JobID,
+		"job", run.JobSpecID,
 		"status", run.Status,
 		"input_data", input.Data,
 		"input_result", input.Status,
@@ -248,7 +248,7 @@ func QueueSleepingTask(
 		return run, fmt.Errorf("Attempting to resume sleeping run with non sleeping task %s", run.ID)
 	}
 
-	adapter, err := adapters.For(currentTaskRun.Task, store)
+	adapter, err := adapters.For(currentTaskRun.TaskSpec, store)
 
 	if err != nil {
 		run.TaskRuns[currentTaskRunIndex] = currentTaskRun.ApplyResult(run.Result.WithError(err))
@@ -260,7 +260,7 @@ func QueueSleepingTask(
 		return run, performTaskSleep(run, &currentTaskRun, currentTaskRunIndex, sleepAdapter, store)
 	}
 
-	return run, fmt.Errorf("Attempting to resume non sleeping task for run %s (%s)", run.ID, currentTaskRun.Task.Type)
+	return run, fmt.Errorf("Attempting to resume non sleeping task for run %s (%s)", run.ID, currentTaskRun.TaskSpec.Type)
 }
 
 func performTaskSleep(

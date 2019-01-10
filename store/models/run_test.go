@@ -32,6 +32,27 @@ func TestJobRuns_RetrievingFromDBWithError(t *testing.T) {
 	assert.Equal(t, "bad idea", run.Result.Error())
 }
 
+func TestJobRuns_RetrievingFromDBWithData(t *testing.T) {
+	t.Parallel()
+	store, cleanup := cltest.NewStore()
+	defer cleanup()
+
+	job, initr := cltest.NewJobWithWebInitiator()
+	err := store.SaveJob(&job)
+	assert.NoError(t, err)
+
+	jr := job.NewRun(initr)
+	data := `{"value":"11850.00"}`
+	jr.Result = cltest.RunResultWithData(data)
+	err = store.SaveJobRun(&jr)
+	assert.NoError(t, err)
+
+	run, err := store.FindJobRun(jr.ID)
+	assert.NoError(t, err)
+	assert.False(t, run.Result.HasError())
+	assert.JSONEq(t, data, run.Result.Data.String())
+}
+
 func TestJobRun_NextTaskRun(t *testing.T) {
 	t.Parallel()
 

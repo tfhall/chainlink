@@ -2,21 +2,20 @@ package orm_test
 
 import (
 	"encoding/hex"
+	"fmt"
 	"math/big"
-	"sort"
 	"testing"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/smartcontractkit/chainlink/internal/cltest"
 	"github.com/smartcontractkit/chainlink/store/models"
-	"github.com/smartcontractkit/chainlink/store/orm"
 	"github.com/smartcontractkit/chainlink/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestWhereNotFound(t *testing.T) {
+func TestORM_WhereNotFound(t *testing.T) {
 	t.Parallel()
 	store, cleanup := cltest.NewStore()
 	defer cleanup()
@@ -29,13 +28,13 @@ func TestWhereNotFound(t *testing.T) {
 	assert.Equal(t, 0, len(jobs), "Queried array should be empty")
 }
 
-func TestAllNotFound(t *testing.T) {
+func TestORM_AllNotFound(t *testing.T) {
 	t.Parallel()
 	store, cleanup := cltest.NewStore()
 	defer cleanup()
 
 	var jobs []models.JobSpec
-	err := store.All(&jobs)
+	err := store.ORM.DB.Find(&jobs).Error
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(jobs), "Queried array should be empty")
 }
@@ -48,17 +47,32 @@ func TestORM_SaveJob(t *testing.T) {
 	j1, _ := cltest.NewJobWithSchedule("* * * * *")
 	store.SaveJob(&j1)
 
-	j2, _ := store.FindJob(j1.ID)
+	j2, err := store.FindJob(j1.ID)
+	assert.NoError(t, err)
 	assert.Equal(t, j1.ID, j2.ID)
 	assert.Equal(t, j1.Initiators[0], j2.Initiators[0])
-	assert.Equal(t, j2.ID, j2.Initiators[0].JobID)
-
-	initiators, err := store.FindInitiatorsForJob(j1.ID)
-	assert.NoError(t, err)
-	assert.Equal(t, models.Cron("* * * * *"), initiators[0].Schedule)
+	assert.Equal(t, j2.ID, j2.Initiators[0].JobSpecID)
 }
 
-func TestJobRunsFor(t *testing.T) {
+func TestORM_SaveJobRun(t *testing.T) {
+	t.Parallel()
+	store, cleanup := cltest.NewStore()
+	defer cleanup()
+
+	job, i := cltest.NewJobWithSchedule("* * * * *")
+	store.SaveJob(&job)
+
+	jr1 := job.NewRun(i)
+	require.NoError(t, store.SaveJobRun(&jr1))
+
+	jr2, err := store.FindJobRun(jr1.ID)
+	assert.NoError(t, err)
+	assert.Equal(t, jr1.ID, jr2.ID)
+	assert.Equal(t, jr1.Initiator, jr2.Initiator)
+	assert.Equal(t, job.ID, jr2.Initiator.JobSpecID)
+}
+
+func TestORM_JobRunsFor(t *testing.T) {
 	t.Parallel()
 
 	store, cleanup := cltest.NewStore()
@@ -111,7 +125,7 @@ func TestORM_SaveServiceAgreement(t *testing.T) {
 	}
 }
 
-func TestJobRunsWithStatus(t *testing.T) {
+func TestORM_JobRunsWithStatus(t *testing.T) {
 	t.Parallel()
 	store, cleanup := cltest.NewStore()
 	defer cleanup()
@@ -166,7 +180,7 @@ func TestJobRunsWithStatus(t *testing.T) {
 	}
 }
 
-func TestAnyJobWithType(t *testing.T) {
+func TestORM_AnyJobWithType(t *testing.T) {
 	t.Parallel()
 
 	store, cleanup := cltest.NewStore()
@@ -184,7 +198,7 @@ func TestAnyJobWithType(t *testing.T) {
 
 }
 
-func TestJobRunsCountFor(t *testing.T) {
+func TestORM_JobRunsCountFor(t *testing.T) {
 	t.Parallel()
 
 	store, cleanup := cltest.NewStore()
@@ -213,7 +227,7 @@ func TestJobRunsCountFor(t *testing.T) {
 	assert.Equal(t, 1, count)
 }
 
-func TestCreatingTx(t *testing.T) {
+func TestORM_CreatingTx(t *testing.T) {
 	t.Parallel()
 	store, cleanup := cltest.NewStore()
 	defer cleanup()
@@ -239,11 +253,11 @@ func TestCreatingTx(t *testing.T) {
 	assert.Equal(t, to, tx.To)
 	assert.Equal(t, data, tx.Data)
 	assert.Equal(t, nonce, tx.Nonce)
-	assert.Equal(t, value, tx.Value)
+	assert.Equal(t, value, tx.Value.ToInt())
 	assert.Equal(t, gasLimit, tx.GasLimit)
 }
 
-func TestFindBridge(t *testing.T) {
+func TestORM_FindBridge(t *testing.T) {
 	t.Parallel()
 
 	store, cleanup := cltest.NewStore()
@@ -292,6 +306,7 @@ func TestORM_PendingBridgeType_alreadyCompleted(t *testing.T) {
 	run := job.NewRun(initr)
 	assert.NoError(t, store.SaveJobRun(&run))
 
+	fmt.Println("--- RunChannel.Send: ", run.ID)
 	store.RunChannel.Send(run.ID)
 	cltest.WaitForJobRunStatus(t, store, run, models.RunStatusCompleted)
 
@@ -307,6 +322,7 @@ func TestORM_PendingBridgeType_success(t *testing.T) {
 
 	bt := cltest.NewBridgeType()
 	assert.NoError(t, store.SaveBridgeType(&bt))
+	fmt.Println("--- trying to save bridge type: ", bt, " with contract payment: ", bt.MinimumContractPayment)
 
 	job, initr := cltest.NewJobWithWebInitiator()
 	job.Tasks = []models.TaskSpec{models.TaskSpec{Type: bt.Name}}
@@ -314,6 +330,7 @@ func TestORM_PendingBridgeType_success(t *testing.T) {
 
 	unfinishedRun := job.NewRun(initr)
 	retrievedBt, err := store.PendingBridgeType(unfinishedRun)
+	fmt.Println("--- got bt: ", retrievedBt, "with err: ", err)
 	assert.NoError(t, err)
 	assert.Equal(t, bt, retrievedBt)
 }
@@ -426,7 +443,7 @@ func TestORM_AuthorizedUserWithSession(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				var bumpedSession models.Session
-				err = store.One("ID", prevSession.ID, &bumpedSession)
+				err = store.ORM.DB.First(&bumpedSession, "ID = ?", prevSession.ID).Error
 				require.NoError(t, err)
 				assert.Equal(t, expectedTime[0:13], bumpedSession.LastUsed.HumanString()[0:13]) // only compare up to the hour
 			}
@@ -507,116 +524,6 @@ func TestORM_CreateSession(t *testing.T) {
 				require.Error(t, err)
 				assert.Empty(t, sessionID)
 			}
-		})
-	}
-}
-
-func TestORM_AllInBatches_DifferentBatchSizes(t *testing.T) {
-	t.Parallel()
-
-	store, cleanup := cltest.NewStore()
-	defer cleanup()
-
-	var expected []string
-	for i := 0; i < 5; i++ {
-		job, _ := cltest.NewJobWithWebInitiator()
-		require.NoError(t, store.SaveJob(&job))
-		expected = append(expected, job.ID)
-	}
-
-	tests := []struct {
-		name      string
-		batchSize int
-	}{
-		{"smaller", 3},
-		{"equal", 5},
-		{"larger", 100},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var bucket []models.JobSpec // Need this to tell storm which bucket to use (via reflection)
-			var actual []string
-
-			err := store.AllInBatches(&bucket, func(j models.JobSpec) bool {
-				actual = append(actual, j.ID)
-				return true
-			}, test.batchSize)
-
-			require.NoError(t, err)
-			sort.Strings(expected)
-			sort.Strings(actual)
-			assert.Equal(t, expected, actual)
-		})
-	}
-}
-
-func TestORM_AllInBatches_EarlyExit(t *testing.T) {
-	t.Parallel()
-
-	store, cleanup := cltest.NewStore()
-	defer cleanup()
-
-	var jobids []string
-	for i := 0; i < 2; i++ {
-		job, _ := cltest.NewJobWithWebInitiator()
-		require.NoError(t, store.SaveJob(&job))
-		jobids = append(jobids, job.ID)
-	}
-
-	var bucket []models.JobSpec
-	var actual []string
-	err := store.AllInBatches(&bucket, func(j models.JobSpec) bool {
-		actual = append(actual, j.ID)
-		return false
-	})
-
-	require.NoError(t, err)
-	assert.Equal(t, 1, len(actual))
-	assert.Contains(t, jobids, actual[0])
-}
-
-func TestORM_AllInBatches_Empty(t *testing.T) {
-	t.Parallel()
-
-	store, cleanup := cltest.NewStore()
-	defer cleanup()
-
-	var bucket []models.JobSpec
-	var actual []string
-	err := store.AllInBatches(&bucket, func(j models.JobSpec) bool {
-		actual = append(actual, j.ID)
-		return true
-	})
-
-	require.NoError(t, err)
-	assert.Empty(t, actual)
-}
-
-func TestORM_AllInBatches_IncorrectCallback(t *testing.T) {
-	t.Parallel()
-
-	store, cleanup := cltest.NewStore()
-	defer cleanup()
-
-	job, _ := cltest.NewJobWithWebInitiator()
-	require.NoError(t, store.SaveJob(&job))
-
-	var bucket []models.JobSpec
-
-	tests := []struct {
-		name     string
-		callback interface{}
-		err      error
-	}{
-		{"missing bool", func(models.JobSpec) {}, orm.ErrorInvalidCallbackSignature},
-		{"wrong rval", func(models.JobSpec) int { return 0 }, orm.ErrorInvalidCallbackSignature},
-		{"mismatched bucket and model", func(models.BridgeType) bool { return true }, orm.ErrorInvalidCallbackModel},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			err := store.AllInBatches(&bucket, test.callback)
-			require.Equal(t, test.err, err)
 		})
 	}
 }

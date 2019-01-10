@@ -151,6 +151,7 @@ func (rm *jobRunner) workerLoop(runID string, workerChannel chan struct{}) {
 		select {
 		case <-workerChannel:
 			run, err := rm.store.FindJobRun(runID)
+			fmt.Println("---- Found job run in worker loop: ", run)
 			if err != nil {
 				logger.Errorw(fmt.Sprint("Error finding run ", runID), run.ForLogger("error", err)...)
 			}
@@ -198,16 +199,20 @@ func prepareTaskInput(run *models.JobRun, currentTaskRun *models.TaskRun) (model
 
 func executeTask(run *models.JobRun, currentTaskRun *models.TaskRun, store *store.Store) models.RunResult {
 	var err error
-	if currentTaskRun.Task.Params, err = currentTaskRun.Task.Params.Merge(run.Overrides.Data); err != nil {
+	fmt.Println("=== private executeTaskRun", currentTaskRun)
+	fmt.Println("=== private executeTaskSpec", currentTaskRun.TaskSpec)
+	fmt.Println("=== private executeTaskSpec Type", currentTaskRun.TaskSpec.Type)
+	if currentTaskRun.TaskSpec.Params, err = currentTaskRun.TaskSpec.Params.Merge(run.Overrides.Data); err != nil {
 		return currentTaskRun.Result.WithError(err)
 	}
 
-	adapter, err := adapters.For(currentTaskRun.Task, store)
+	fmt.Println("=== fetching adapters for: ", currentTaskRun, currentTaskRun.TaskSpec)
+	adapter, err := adapters.For(currentTaskRun.TaskSpec, store)
 	if err != nil {
 		return currentTaskRun.Result.WithError(err)
 	}
 
-	logger.Infow(fmt.Sprintf("Processing task %s", currentTaskRun.Task.Type), []interface{}{"task", currentTaskRun.ID}...)
+	logger.Infow(fmt.Sprintf("Processing task %s", currentTaskRun.TaskSpec.Type), []interface{}{"task", currentTaskRun.ID}...)
 
 	input, err := prepareTaskInput(run, currentTaskRun)
 	if err != nil {
@@ -216,7 +221,7 @@ func executeTask(run *models.JobRun, currentTaskRun *models.TaskRun, store *stor
 
 	result := adapter.Perform(input, store)
 
-	logger.Infow(fmt.Sprintf("Finished processing task %s", currentTaskRun.Task.Type), []interface{}{
+	logger.Infow(fmt.Sprintf("Finished processing task %s", currentTaskRun.TaskSpec.Type), []interface{}{
 		"task", currentTaskRun.ID,
 		"result", result.Status,
 		"result_data", result.Data,
@@ -243,6 +248,7 @@ func executeRun(run *models.JobRun, store *store.Store) (*models.JobRun, error) 
 
 	currentTaskRun = currentTaskRun.ApplyResult(result)
 	run.TaskRuns[currentTaskRunIndex] = currentTaskRun
+	fmt.Println("---- applying result: ", result)
 	*run = run.ApplyResult(result)
 
 	if currentTaskRun.Status.PendingSleep() {

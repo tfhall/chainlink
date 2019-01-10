@@ -599,6 +599,7 @@ func CreateJobRunViaWeb(t *testing.T, app *TestApplication, j models.JobSpec, bo
 	if len(body) > 0 {
 		bodyBuffer = bytes.NewBufferString(body[0])
 	}
+	fmt.Println("--- sending: ", bodyBuffer)
 	client := app.NewHTTPClient()
 	resp, cleanup := client.Post("/v2/specs/"+j.ID+"/runs", bodyBuffer)
 	defer cleanup()
@@ -607,7 +608,7 @@ func CreateJobRunViaWeb(t *testing.T, app *TestApplication, j models.JobSpec, bo
 	err := ParseJSONAPIResponse(resp, &jr)
 	require.NoError(t, err)
 
-	assert.Equal(t, j.ID, jr.JobID)
+	assert.Equal(t, j.ID, jr.JobSpecID)
 	return jr
 }
 
@@ -876,6 +877,7 @@ func AssertValidHash(t *testing.T, length int, hash string) {
 // AssertServerResponse is used to match against a client response, will print
 // any errors returned if the request fails.
 func AssertServerResponse(t *testing.T, resp *http.Response, expectedStatusCode int) {
+	fmt.Println("--- got that response", resp)
 	if resp.StatusCode == expectedStatusCode {
 		return
 	}
@@ -958,11 +960,6 @@ func NewSession(optionalSessionID ...string) models.Session {
 	return session
 }
 
-func ResetBucket(store *store.Store, bucket interface{}) {
-	mustNotErr(store.Drop(bucket))
-	mustNotErr(store.Init(bucket))
-}
-
 type MockChangePasswordPrompter struct {
 	models.ChangePasswordRequest
 	err error
@@ -973,12 +970,8 @@ func (m MockChangePasswordPrompter) Prompt() (models.ChangePasswordRequest, erro
 }
 
 func AllJobs(store *store.Store) []models.JobSpec {
-	var bucket []models.JobSpec
 	var all []models.JobSpec
-	err := store.AllInBatches(&bucket, func(j models.JobSpec) bool {
-		all = append(all, j)
-		return true
-	})
+	err := store.ORM.DB.Find(&all).Error
 	mustNotErr(err)
 	return all
 }

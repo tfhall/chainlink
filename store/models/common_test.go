@@ -223,7 +223,7 @@ func TestJSON_CBOR(t *testing.T) {
 
 			decoded, err = utils.CoerceInterfaceMapToStringMap(decoded)
 			assert.NoError(t, err)
-			assert.True(t, reflect.DeepEqual(test.in.Value(), decoded))
+			assert.True(t, reflect.DeepEqual(test.in.Result.Value(), decoded))
 		})
 	}
 }

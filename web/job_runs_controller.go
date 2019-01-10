@@ -67,6 +67,7 @@ func (jrc *JobRunsController) Create(c *gin.Context) {
 	} else if err != nil {
 		c.AbortWithError(500, err)
 	} else if !j.WebAuthorized() {
+		fmt.Println("--- retrieved job: ", j, "and initrs", j.Initiators)
 		c.AbortWithError(403, errors.New("Job not available on web API, recreate with web initiator"))
 	} else if data, err := getRunData(c); err != nil {
 		c.AbortWithError(500, err)
@@ -81,6 +82,7 @@ func (jrc *JobRunsController) Create(c *gin.Context) {
 
 func getRunData(c *gin.Context) (models.JSON, error) {
 	b, err := ioutil.ReadAll(c.Request.Body)
+	fmt.Println("--- received: ", b, " with err: ", err)
 	if err != nil {
 		return models.JSON{}, err
 	}

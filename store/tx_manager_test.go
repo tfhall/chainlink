@@ -113,7 +113,7 @@ func TestTxManager_CreateTx_RoundRobinSuccess(t *testing.T) {
 	// ensure gas bumped attempt does not round robin on the From Address
 	// best way to ensure the same from address atm is to compare Hashes, since
 	// tx attempts don't have From but rely on parent Tx model.
-	etx := createdTx1.EthTx(a2.GasPrice)
+	etx := createdTx1.EthTx(a2.GasPrice.ToInt())
 	etx, err = store.KeyStore.SignTx(accounts[0], etx, config.ChainID())
 	assert.Equal(t, etx.Hash().Hex(), a2.Hash.Hex(), "should be same since they have the same input, include From address")
 
@@ -242,7 +242,7 @@ func TestTxManager_CreateTx_NonceTooLowReloadSuccess(t *testing.T) {
 
 			a, err := manager.CreateTx(to, data)
 			assert.NoError(t, err)
-			tx, err := store.FindTx(a.TxID)
+			tx, err := store.FindTx(a.ID)
 			require.NoError(t, err)
 			assert.NoError(t, err)
 			assert.Equal(t, nonce2, tx.Nonce)

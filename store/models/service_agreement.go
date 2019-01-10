@@ -26,12 +26,12 @@ type UnsignedServiceAgreement struct {
 
 // ServiceAgreement connects job specifications with on-chain encumbrances.
 type ServiceAgreement struct {
-	CreatedAt   Time        `json:"createdAt" storm:"index"`
-	Encumbrance Encumbrance `json:"encumbrance" storm:"inline"`
-	ID          string      `json:"id" storm:"id,unique"`
-	JobSpecID   string      `json:"jobSpecID"`
+	ID          string      `json:"id" gorm:"primary_key"`
+	CreatedAt   Time        `json:"createdAt" gorm:"index"`
+	Encumbrance Encumbrance `json:"encumbrance"`
 	RequestBody string      `json:"requestBody"`
 	Signature   Signature   `json:"signature"`
+	JobSpecID   string      `json:"jobSpecID" gorm:"index"`
 	JobSpec     JobSpec     // JobSpec is used during the initial SA creation.
 	// If needed later, it can be retrieved from the database with JobSpecID.
 }

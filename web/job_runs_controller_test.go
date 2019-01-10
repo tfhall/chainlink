@@ -34,7 +34,7 @@ func BenchmarkJobRunsController_Index(b *testing.B) {
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		resp, cleanup := client.Get("/v2/runs?jobSpecId=" + run1.JobID)
+		resp, cleanup := client.Get("/v2/runs?jobSpecId=" + run1.JobSpecID)
 		defer cleanup()
 		assert.Equal(b, 200, resp.StatusCode, "Response should be successful")
 	}
@@ -50,11 +50,11 @@ func TestJobRunsController_Index(t *testing.T) {
 
 	runA, runB, runC := setupJobRunsControllerIndex(t, app)
 
-	resp, cleanup := client.Get("/v2/runs?size=x&jobSpecId=" + runA.JobID)
+	resp, cleanup := client.Get("/v2/runs?size=x&jobSpecId=" + runA.JobSpecID)
 	defer cleanup()
 	cltest.AssertServerResponse(t, resp, 422)
 
-	resp, cleanup = client.Get("/v2/runs?size=1&jobSpecId=" + runA.JobID)
+	resp, cleanup = client.Get("/v2/runs?size=1&jobSpecId=" + runA.JobSpecID)
 	defer cleanup()
 	cltest.AssertServerResponse(t, resp, 200)
 
@@ -136,7 +136,7 @@ func TestJobRunsController_Create_Success(t *testing.T) {
 	defer cleanup()
 
 	j, _ := cltest.NewJobWithWebInitiator()
-	assert.Nil(t, app.Store.SaveJob(&j))
+	assert.NoError(t, app.Store.SaveJob(&j))
 
 	jr := cltest.CreateJobRunViaWeb(t, app, j, `{"value":"100"}`)
 	jr = cltest.WaitForJobRunToComplete(t, app.Store, jr)
@@ -225,6 +225,7 @@ func TestJobRunsController_Update_Success(t *testing.T) {
 	assert.Equal(t, jr.ID, jrID)
 
 	jr = cltest.WaitForJobRunToComplete(t, app.Store, jr)
+	fmt.Println("--- got back job run: ", jr)
 	val, err := jr.Result.Value()
 	assert.NoError(t, err)
 	assert.Equal(t, "100", val)
@@ -377,7 +378,7 @@ func TestJobRunsController_Update_NotFound(t *testing.T) {
 	body := fmt.Sprintf(`{"id":"%v","data":{"value": "100"}}`, jr.ID)
 	resp, cleanup := client.Patch("/v2/runs/"+jr.ID+"1", bytes.NewBufferString(body))
 	defer cleanup()
-	assert.Equal(t, 404, resp.StatusCode, "Response should be successful")
+	assert.Equal(t, 404, resp.StatusCode, "Response should be not found")
 	jr, err := app.Store.FindJobRun(jr.ID)
 	assert.NoError(t, err)
 	assert.Equal(t, models.RunStatusPendingBridge, jr.Status)
@@ -395,8 +396,7 @@ func TestJobRunsController_Show_Found(t *testing.T) {
 	app.Store.SaveJob(&j)
 
 	jr := j.NewRun(initr)
-	jr.ID = "jobrun1"
-	assert.Nil(t, app.Store.SaveJobRun(&jr))
+	assert.NoError(t, app.Store.SaveJobRun(&jr))
 
 	resp, cleanup := client.Get("/v2/runs/" + jr.ID)
 	defer cleanup()

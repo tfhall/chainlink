@@ -1,8 +1,10 @@
 package models
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,14 +16,19 @@ import (
 // Tx contains fields necessary for an Ethereum transaction with
 // an additional field for the TxAttempt.
 type Tx struct {
-	ID       uint64         `storm:"id,increment,index"`
-	From     common.Address `storm:"index"`
-	To       common.Address
+	ID       uint64         `gorm:"primary_key;auto_increment"`
+	From     common.Address `gorm:"index;not null"`
+	To       common.Address `gorm:"not null"`
 	Data     []byte
-	Nonce    uint64 `storm:"index"`
-	Value    *big.Int
+	Nonce    uint64 `gorm:"index"`
+	Value    *Big
 	GasLimit uint64
-	TxAttempt
+	// TxAttempt fields manually included; can't embed another primary_key
+	Hash      common.Hash
+	GasPrice  *Big
+	Confirmed bool
+	Hex       string `gorm:"type:text"`
+	SentAt    uint64
 }
 
 // EthTx creates a new Ethereum transaction with a given gasPrice in wei
@@ -30,11 +37,19 @@ func (tx *Tx) EthTx(gasPriceWei *big.Int) *types.Transaction {
 	return types.NewTransaction(
 		tx.Nonce,
 		tx.To,
-		tx.Value,
+		tx.Value.ToInt(),
 		tx.GasLimit,
 		gasPriceWei,
 		tx.Data,
 	)
+}
+
+func (tx *Tx) AssignTxAttempt(txat *TxAttempt) {
+	tx.Hash = txat.Hash
+	tx.GasPrice = txat.GasPrice
+	tx.Confirmed = txat.Confirmed
+	tx.Hex = txat.Hex
+	tx.SentAt = txat.SentAt
 }
 
 // TxAttempt is used for keeping track of transactions that
@@ -42,11 +57,11 @@ func (tx *Tx) EthTx(gasPriceWei *big.Int) *types.Transaction {
 // it so that if the network is busy, a transaction can be
 // resubmitted with a higher GasPrice.
 type TxAttempt struct {
-	Hash      common.Hash `storm:"id,unique"`
-	TxID      uint64      `storm:"index"`
-	GasPrice  *big.Int
+	Hash      common.Hash `gorm:"primary_key;not null"`
+	TxID      uint64      `gorm:"index"`
+	GasPrice  *Big
 	Confirmed bool
-	Hex       string
+	Hex       string `gorm:"type:text"`
 	SentAt    uint64
 }
 
@@ -163,8 +178,8 @@ func (h BlockHeader) ToIndexableBlockNumber() *IndexableBlockNumber {
 
 // IndexableBlockNumber represents a BlockNumber, BlockHash and the number of Digits in the BlockNumber
 type IndexableBlockNumber struct {
-	Number hexutil.Big `json:"number" storm:"id,unique"`
-	Digits int         `json:"digits" storm:"index"`
+	Number Big         `json:"number" gorm:"index;type:varchar(255);not null"`
+	Digits int         `json:"digits" gorm:"index"`
 	Hash   common.Hash `json:"hash"`
 }
 
@@ -175,7 +190,7 @@ func NewIndexableBlockNumber(bigint *big.Int, hash common.Hash) *IndexableBlockN
 	}
 	number := hexutil.Big(*bigint)
 	return &IndexableBlockNumber{
-		Number: number,
+		Number: Big(number),
 		Digits: len(number.String()) - 2,
 		Hash:   hash,
 	}
@@ -219,4 +234,41 @@ func (l *IndexableBlockNumber) NextInt() *big.Int {
 type EthSubscription interface {
 	Err() <-chan error
 	Unsubscribe()
+}
+
+type Big big.Int
+
+func NewBig(i *big.Int) *Big {
+	b := Big(*i)
+	return &b
+}
+
+func (b Big) Value() (driver.Value, error) {
+	return b.String(), nil
+}
+
+func (b *Big) Scan(value interface{}) error {
+	temp, ok := value.([]uint8)
+	if !ok {
+		return fmt.Errorf("Unable to convert %v of %T to Big", value, value)
+	}
+
+	decoded, err := hexutil.DecodeBig(string(temp))
+	*b = Big(*decoded)
+	return err
+}
+
+// ToInt converts b to a big.Int.
+func (b *Big) ToInt() *big.Int {
+	return (*big.Int)(b)
+}
+
+func (b *Big) ToHexUtilBig() *hexutil.Big {
+	h := hexutil.Big(*b)
+	return &h
+}
+
+// String returns the hex encoding of b.
+func (b *Big) String() string {
+	return hexutil.EncodeBig(b.ToInt())
 }

@@ -35,6 +35,7 @@ func TestNewRun(t *testing.T) {
 		Type: "timecube",
 	}}
 	jobSpec.Initiators = []models.Initiator{{
+		ID:   utils.NewBytes32ID(),
 		Type: models.InitiatorEthLog,
 	}}
 
@@ -79,6 +80,7 @@ func TestNewRun_requiredPayment(t *testing.T) {
 				Type: "timecube",
 			}}
 			jobSpec.Initiators = []models.Initiator{{
+				ID:   utils.NewBytes32ID(),
 				Type: models.InitiatorEthLog,
 			}}
 
@@ -234,7 +236,7 @@ func TestResumeConfirmingTask(t *testing.T) {
 		ID:             utils.NewBytes32ID(),
 		CreationHeight: &creationHeight,
 		Status:         models.RunStatusPendingConfirmations,
-		TaskRuns:       []models.TaskRun{models.TaskRun{MinimumConfirmations: 2, Task: models.TaskSpec{Type: adapters.TaskTypeNoOp}}},
+		TaskRuns:       []models.TaskRun{models.TaskRun{MinimumConfirmations: 2, TaskSpec: models.TaskSpec{Type: adapters.TaskTypeNoOp}}},
 	}
 	run, err = services.ResumeConfirmingTask(run, store, &creationHeight)
 	assert.NoError(t, err)
@@ -246,7 +248,7 @@ func TestResumeConfirmingTask(t *testing.T) {
 		ID:             utils.NewBytes32ID(),
 		CreationHeight: &creationHeight,
 		Status:         models.RunStatusPendingConfirmations,
-		TaskRuns:       []models.TaskRun{models.TaskRun{MinimumConfirmations: 1, Task: models.TaskSpec{Type: adapters.TaskTypeNoOp}}},
+		TaskRuns:       []models.TaskRun{models.TaskRun{MinimumConfirmations: 1, TaskSpec: models.TaskSpec{Type: adapters.TaskTypeNoOp}}},
 	}
 	observedHeight := cltest.BigHexInt(1)
 	run, err = services.ResumeConfirmingTask(run, store, &observedHeight)
@@ -272,7 +274,7 @@ func TestResumeConnectingTask(t *testing.T) {
 	run = &models.JobRun{
 		ID:       utils.NewBytes32ID(),
 		Status:   models.RunStatusPendingConnection,
-		TaskRuns: []models.TaskRun{models.TaskRun{Task: models.TaskSpec{Type: adapters.TaskTypeNoOp}}},
+		TaskRuns: []models.TaskRun{models.TaskRun{TaskSpec: models.TaskSpec{Type: adapters.TaskTypeNoOp}}},
 	}
 	run, err = services.ResumeConnectingTask(run, store)
 	assert.NoError(t, err)
@@ -304,7 +306,7 @@ func TestQueueSleepingTask(t *testing.T) {
 	run = &models.JobRun{
 		ID:       utils.NewBytes32ID(),
 		Status:   models.RunStatusPendingSleep,
-		TaskRuns: []models.TaskRun{models.TaskRun{Task: models.TaskSpec{Type: adapters.TaskTypeSleep}}},
+		TaskRuns: []models.TaskRun{models.TaskRun{TaskSpec: models.TaskSpec{Type: adapters.TaskTypeSleep}}},
 	}
 	run, err = services.QueueSleepingTask(run, store)
 	assert.Error(t, err)
@@ -317,7 +319,7 @@ func TestQueueSleepingTask(t *testing.T) {
 		TaskRuns: []models.TaskRun{
 			models.TaskRun{
 				Status: models.RunStatusPendingSleep,
-				Task: models.TaskSpec{
+				TaskSpec: models.TaskSpec{
 					Type:   adapters.TaskTypeSleep,
 					Params: inputFromTheFuture,
 				},
@@ -333,7 +335,7 @@ func TestQueueSleepingTask(t *testing.T) {
 	run = &models.JobRun{
 		ID:       utils.NewBytes32ID(),
 		Status:   models.RunStatusPendingSleep,
-		TaskRuns: []models.TaskRun{models.TaskRun{Status: models.RunStatusPendingSleep, Task: models.TaskSpec{Type: adapters.TaskTypeSleep}}},
+		TaskRuns: []models.TaskRun{models.TaskRun{Status: models.RunStatusPendingSleep, TaskSpec: models.TaskSpec{Type: adapters.TaskTypeSleep}}},
 	}
 	run, err = services.QueueSleepingTask(run, store)
 	assert.NoError(t, err)
@@ -356,7 +358,7 @@ func TestQueueSleepingTask(t *testing.T) {
 		TaskRuns: []models.TaskRun{
 			models.TaskRun{
 				Status: models.RunStatusPendingSleep,
-				Task: models.TaskSpec{
+				TaskSpec: models.TaskSpec{
 					Type:   adapters.TaskTypeSleep,
 					Params: inputFromTheFuture,
 				},

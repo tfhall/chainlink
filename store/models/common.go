@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -96,6 +97,20 @@ func (s RunStatus) CanStart() bool {
 	return s.Pending() || s.Unstarted()
 }
 
+func (s RunStatus) Value() (driver.Value, error) {
+	return string(s), nil
+}
+
+func (s *RunStatus) Scan(value interface{}) error {
+	temp, ok := value.([]uint8)
+	if !ok {
+		return fmt.Errorf("Unable to convert %v of %T to RunStatus", value, value)
+	}
+
+	*s = RunStatus(temp)
+	return nil
+}
+
 // ParseCBOR attempts to coerce the input byte array into valid CBOR
 // and then coerces it into a JSON object.
 func ParseCBOR(b []byte) (JSON, error) {
@@ -124,6 +139,21 @@ func ParseCBOR(b []byte) (JSON, error) {
 // Arrays and Objects are returned as their raw json types.
 type JSON struct {
 	gjson.Result
+}
+
+func (j JSON) Value() (driver.Value, error) {
+	return j.String(), nil
+}
+
+func (j *JSON) Scan(value interface{}) error {
+	bytes, ok := value.([]uint8)
+	temp := string(bytes)
+	if !ok {
+		return fmt.Errorf("Unable to convert %v of %T to Time", value, value)
+	}
+
+	*j = JSON{Result: gjson.Parse(temp)}
+	return nil
 }
 
 // ParseJSON attempts to coerce the input byte array into valid JSON
@@ -215,7 +245,7 @@ func (j JSON) CBOR() ([]byte, error) {
 	var b []byte
 	cbor := codec.NewEncoderBytes(&b, new(codec.CborHandle))
 
-	switch v := j.Value().(type) {
+	switch v := j.Result.Value().(type) {
 	case map[string]interface{}, []interface{}, nil:
 		return b, cbor.Encode(v)
 	default:
@@ -253,9 +283,54 @@ func (w WebURL) String() string {
 	return url.String()
 }
 
+func (w WebURL) Value() (driver.Value, error) {
+	return w.String(), nil
+}
+
+func (w *WebURL) Scan(value interface{}) error {
+	var s string
+	switch temp := value.(type) {
+	case []uint8:
+		s = string(temp)
+	default:
+		return fmt.Errorf("Unable to convert %v of %T to WebURL", value, value)
+	}
+
+	u, err := url.ParseRequestURI(s)
+	if err != nil {
+		return err
+	}
+	*w = WebURL(*u)
+	return nil
+}
+
+type Address struct {
+	common.Address
+}
+
 // Time holds a common field for time.
 type Time struct {
 	time.Time
+}
+
+func (t Time) Value() (driver.Value, error) {
+	return t.Time, nil
+}
+
+func (t *Time) Scan(value interface{}) error {
+	var s string
+	switch temp := value.(type) {
+	case []uint8:
+		s = string(temp)
+		newTime, err := dateparse.ParseAny(s)
+		*t = Time{Time: newTime}
+		return err
+	case time.Time:
+		*t = Time{Time: temp}
+		return nil
+	default:
+		return fmt.Errorf("Unable to convert %v of %T to Time", value, value)
+	}
 }
 
 // UnmarshalJSON parses the raw time stored in JSON-encoded
@@ -324,7 +399,7 @@ type WithdrawalRequest struct {
 }
 
 // Int stores large integers and can deserialize a variety of inputs.
-type Int big.Int
+type Int big.Int // TODO: Consolidate w models.Big
 
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (i *Int) UnmarshalText(input []byte) error {

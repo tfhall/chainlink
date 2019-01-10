@@ -291,7 +291,7 @@ func TestIntegration_ExternalAdapter_RunLogInitiated(t *testing.T) {
 	jr = cltest.WaitForJobRunToComplete(t, app.Store, jr)
 
 	tr := jr.TaskRuns[0]
-	assert.Equal(t, "randomnumber", tr.Task.Type.String())
+	assert.Equal(t, "randomnumber", tr.TaskSpec.Type.String())
 	val, err := tr.Result.Value()
 	assert.NoError(t, err)
 	assert.Equal(t, eaValue, val)
@@ -341,9 +341,9 @@ func TestIntegration_ExternalAdapter_Copy(t *testing.T) {
 	jr := cltest.WaitForJobRunToComplete(t, app.Store, cltest.CreateJobRunViaWeb(t, app, j, `{"copyPath": ["price"]}`))
 
 	tr := jr.TaskRuns[0]
-	assert.Equal(t, "assetprice", tr.Task.Type.String())
+	assert.Equal(t, "assetprice", tr.TaskSpec.Type.String())
 	tr = jr.TaskRuns[1]
-	assert.Equal(t, "copy", tr.Task.Type.String())
+	assert.Equal(t, "copy", tr.TaskSpec.Type.String())
 	val, err := tr.Result.Value()
 	assert.NoError(t, err)
 	assert.Equal(t, eaPrice, val)
@@ -567,7 +567,7 @@ func TestIntegration_BulkDeleteRuns(t *testing.T) {
 	completedRun := job.NewRun(initiator)
 	completedRun.Status = models.RunStatusCompleted
 	completedRun.UpdatedAt = cltest.ParseISO8601("2018-11-02T10:14:18Z")
-	err := app.GetStore().ORM.DB.Save(&completedRun)
+	err := app.GetStore().ORM.DB.Save(&completedRun).Error
 	assert.NoError(t, err)
 
 	client := app.NewHTTPClient()
