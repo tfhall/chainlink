@@ -119,7 +119,7 @@ func TestIntegration_HelloWorld(t *testing.T) {
 	val, err = jr.Result.Value()
 	assert.Equal(t, attempt1Hash.String(), val)
 	assert.NoError(t, err)
-	assert.Equal(t, jr.Result.JobRunID, jr.ID)
+	assert.Equal(t, jr.Result.CachedJobRunID, jr.ID)
 
 	eth.EventuallyAllCalled(t)
 }
@@ -436,7 +436,7 @@ func TestIntegration_WeiWatchers(t *testing.T) {
 
 	jobRuns := cltest.WaitForRuns(t, j, app.Store, 1)
 	jr := cltest.WaitForJobRunToComplete(t, app.Store, jobRuns[0])
-	assert.Equal(t, jr.Result.JobRunID, jr.ID)
+	assert.Equal(t, jr.Result.CachedJobRunID, jr.ID)
 }
 
 func TestIntegration_MultiplierInt256(t *testing.T) {

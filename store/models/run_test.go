@@ -182,33 +182,33 @@ func TestRunResult_Merge(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			original := models.RunResult{
-				Data:         models.JSON{Result: gjson.Parse(test.originalData)},
-				ErrorMessage: test.originalError,
-				JobRunID:     test.originalJRID,
-				Status:       test.originalStatus,
+				Data:           models.JSON{Result: gjson.Parse(test.originalData)},
+				ErrorMessage:   test.originalError,
+				CachedJobRunID: test.originalJRID,
+				Status:         test.originalStatus,
 			}
 			in := models.RunResult{
-				Data:         cltest.JSONFromString(test.inData),
-				ErrorMessage: test.inError,
-				JobRunID:     test.inJRID,
-				Status:       test.inStatus,
+				Data:           cltest.JSONFromString(test.inData),
+				ErrorMessage:   test.inError,
+				CachedJobRunID: test.inJRID,
+				Status:         test.inStatus,
 			}
 			merged, err := original.Merge(in)
 			assert.Equal(t, test.wantErrored, err != nil)
 
 			assert.JSONEq(t, test.originalData, original.Data.String())
 			assert.Equal(t, test.originalError, original.ErrorMessage)
-			assert.Equal(t, test.originalJRID, original.JobRunID)
+			assert.Equal(t, test.originalJRID, original.CachedJobRunID)
 			assert.Equal(t, test.originalStatus, original.Status)
 
 			assert.JSONEq(t, test.inData, in.Data.String())
 			assert.Equal(t, test.inError, in.ErrorMessage)
-			assert.Equal(t, test.inJRID, in.JobRunID)
+			assert.Equal(t, test.inJRID, in.CachedJobRunID)
 			assert.Equal(t, test.inStatus, in.Status)
 
 			assert.JSONEq(t, test.wantData, merged.Data.String())
 			assert.Equal(t, test.wantErrorMessage, merged.ErrorMessage)
-			assert.Equal(t, test.wantJRID, merged.JobRunID)
+			assert.Equal(t, test.wantJRID, merged.CachedJobRunID)
 			assert.Equal(t, test.wantStatus, merged.Status)
 		})
 	}

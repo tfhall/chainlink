@@ -218,7 +218,7 @@ func ConvertToAssignment(j JobSpec) (AssignmentSpec, error) {
 func ConvertToSnapshot(rr RunResult) Snapshot {
 	return Snapshot{
 		Details: rr.Data,
-		ID:      rr.JobRunID,
+		ID:      rr.CachedJobRunID,
 		Error:   rr.ErrorMessage,
 		Pending: rr.Status.PendingBridge(),
 	}

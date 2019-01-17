@@ -103,17 +103,20 @@ func (orm *ORM) FindInitiator(ID string) (models.Initiator, error) {
 	return initr, multify(orm.DB.Set("gorm:auto_preload", true).First(&initr, "id = ?", ID))
 }
 
+func (orm *ORM) preloadedJobRuns() *gorm.DB {
+	return orm.DB.
+		Preload("Initiator").
+		Preload("Overrides").
+		Preload("Result").
+		Preload("TaskRuns", func(db *gorm.DB) *gorm.DB {
+			return db.Set("gorm:auto_preload", true).Order("task_runs.created_at asc")
+		})
+}
+
 // FindJobRun looks up a JobRun by its ID.
 func (orm *ORM) FindJobRun(id string) (models.JobRun, error) {
 	var jr models.JobRun
-	err := multify(orm.DB.Set("gorm:auto_preload", true).First(&jr, "id = ?", id))
-	if err != nil {
-		return jr, err
-	}
-
-	var rr models.RunResult
-	err = multifyWithoutRecordNotFound(orm.DB.First(&rr, "job_run_id = ? AND (task_run_id IS NULL OR task_run_id = ?)", id, ""))
-	jr.Result = rr
+	err := orm.preloadedJobRuns().First(&jr, "id = ?", id).Error
 	return jr, err
 }
 
@@ -157,7 +160,10 @@ func (orm *ORM) Jobs(cb func(models.JobSpec) bool) error {
 // sorted by their created at time.
 func (orm *ORM) JobRunsFor(jobSpecID string) ([]models.JobRun, error) {
 	runs := []models.JobRun{}
-	err := multify(orm.DB.Set("gorm:auto_preload", true).Where("job_spec_id = ?", jobSpecID).Order("created_at desc").Find(&runs))
+	err := orm.preloadedJobRuns().
+		Where("job_spec_id = ?", jobSpecID).
+		Order("created_at desc").
+		Find(&runs).Error
 	return runs, err
 }
 
@@ -196,8 +202,8 @@ func (orm *ORM) SaveServiceAgreement(sa *models.ServiceAgreement) error {
 // JobRunsWithStatus returns the JobRuns which have the passed statuses.
 func (orm *ORM) JobRunsWithStatus(statuses ...models.RunStatus) ([]models.JobRun, error) {
 	runs := []models.JobRun{}
-	merr := multify(orm.DB.Set("gorm:auto_preload", true).Where("status IN (?)", statuses).Find(&runs))
-	return runs, merr
+	err := orm.preloadedJobRuns().Where("status IN (?)", statuses).Find(&runs).Error
+	return runs, err
 }
 
 // AnyJobWithType returns true if there is at least one job associated with
@@ -497,8 +503,7 @@ func (orm *ORM) JobRunsSorted(order SortType, offset int, limit int) ([]models.J
 	}
 
 	var runs []models.JobRun
-	rval := orm.DB.
-		Set("gorm:auto_preload", true).
+	rval := orm.preloadedJobRuns().
 		Order(fmt.Sprintf("created_at %s", order.String())).
 		Limit(limit).Offset(offset).Find(&runs)
 	return runs, count, multifyWithoutRecordNotFound(rval)
@@ -513,8 +518,7 @@ func (orm *ORM) JobRunsSortedFor(id string, order SortType, offset int, limit in
 	}
 
 	var runs []models.JobRun
-	rval := orm.DB.
-		Set("gorm:auto_preload", true).
+	rval := orm.preloadedJobRuns().
 		Order(fmt.Sprintf("created_at %s", order.String())).
 		Limit(limit).Offset(offset).Find(&runs)
 	return runs, count, multifyWithoutRecordNotFound(rval)
