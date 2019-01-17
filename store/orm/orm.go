@@ -78,7 +78,7 @@ func (orm *ORM) Where(field string, value interface{}, instance interface{}) err
 // FindBridge looks up a Bridge by its Name.
 func (orm *ORM) FindBridge(name string) (models.BridgeType, error) {
 	var bt models.BridgeType
-	return bt, multify(orm.DB.Set("gorm:auto_preload", true).First(&bt, "name = ?", name))
+	return bt, multify(orm.DB.First(&bt, "name = ?", name))
 }
 
 // PendingBridgeType returns the bridge type of the current pending task,
@@ -588,4 +588,14 @@ func (orm *ORM) SaveBulkDeleteRunTask(task *models.BulkDeleteRunTask) error {
 func (orm *ORM) FindBulkDeleteRunTask(id string) (*models.BulkDeleteRunTask, error) {
 	task := &models.BulkDeleteRunTask{}
 	return task, orm.DB.Set("gorm:auto_preload", true).First(task, "ID = ?", id).Error
+}
+
+func (orm *ORM) BulkDeletesInProgress() ([]models.BulkDeleteRunTask, error) {
+	deleteTasks := []models.BulkDeleteRunTask{}
+	err := orm.DB.
+		Set("gorm:auto_preload", true).
+		Where("status = ?", models.BulkTaskStatusInProgress).
+		Order("created_at asc").
+		Find(&deleteTasks).Error
+	return deleteTasks, err
 }

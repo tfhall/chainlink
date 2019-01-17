@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/araddon/dateparse"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/smartcontractkit/chainlink/internal/cltest"
 	"github.com/smartcontractkit/chainlink/store/models"
@@ -526,4 +527,27 @@ func TestORM_CreateSession(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestORM_SavenAndFindBulkDeleteRunTask(t *testing.T) {
+	t.Parallel()
+
+	store, cleanup := cltest.NewStore()
+	defer cleanup()
+
+	before, err := dateparse.ParseAny("2018-11-28T21:24:03Z")
+	require.NoError(t, err)
+	request := models.BulkDeleteRunRequest{
+		Status:        []models.RunStatus{"completed", "errored"},
+		UpdatedBefore: before,
+	}
+
+	dt, err := models.NewBulkDeleteRunTask(request)
+	require.NoError(t, err)
+	require.NoError(t, store.SaveBulkDeleteRunTask(dt))
+
+	retrieved, err := store.FindBulkDeleteRunTask(dt.ID)
+	require.NoError(t, err)
+
+	assert.Equal(t, dt.Query.Status, retrieved.Query.Status)
 }

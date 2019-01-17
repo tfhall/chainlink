@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jinzhu/gorm"
 	"github.com/smartcontractkit/chainlink/utils"
 )
 
@@ -37,15 +38,16 @@ func (t *BulkTaskStatus) Scan(value interface{}) error {
 
 // BulkDeleteRunRequest describes the query for deletion of runs
 type BulkDeleteRunRequest struct {
-	BulkDeleteRunTaskID string              `json:"-"`
-	Status              RunStatusCollection `json:"status" gorm:"type:text"`
-	UpdatedBefore       time.Time           `json:"updatedBefore"`
+	gorm.Model
+	Status        RunStatusCollection `json:"status" gorm:"type:text"`
+	UpdatedBefore time.Time           `json:"updatedBefore"`
 }
 
 // BulkDeleteRunTask represents a task that is working to delete runs with a query
 type BulkDeleteRunTask struct {
 	ID           string               `json:"id" gorm:"primary_key"`
 	Query        BulkDeleteRunRequest `json:"query"`
+	QueryID      uint                 `json:"-"`
 	Status       BulkTaskStatus       `json:"status"`
 	ErrorMessage string               `json:"error" gorm:"type:varchar(255)"`
 	CreatedAt    time.Time
@@ -83,14 +85,18 @@ func (t *BulkDeleteRunTask) SetID(value string) error {
 
 type RunStatusCollection []RunStatus
 
-func (r RunStatusCollection) Value() (driver.Value, error) {
+func (r RunStatusCollection) ToStrings() []string {
 	// Unable to convert copy-free without unsafe:
 	// https://stackoverflow.com/a/48554123/639773
 	converted := make([]string, len(r))
 	for i, e := range r {
 		converted[i] = string(e)
 	}
-	return strings.Join(converted, ","), nil
+	return converted
+}
+
+func (r RunStatusCollection) Value() (driver.Value, error) {
+	return strings.Join(r.ToStrings(), ","), nil
 }
 
 func (r *RunStatusCollection) Scan(value interface{}) error {

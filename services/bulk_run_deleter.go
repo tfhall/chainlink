@@ -22,11 +22,9 @@ type bulkRunDeleter struct {
 }
 
 func (btr *bulkRunDeleter) Work() {
-	db := btr.store.DB
-	deleteTasks := []models.BulkDeleteRunTask{}
-	rval := db.Where("status = ?", models.BulkTaskStatusInProgress).Order("created_at asc").Find(&deleteTasks)
-	if rval.Error != nil {
-		logger.Errorw("Error querying bulk tasks", "error", rval.Error)
+	deleteTasks, err := btr.store.BulkDeletesInProgress()
+	if err != nil {
+		logger.Errorw("Error querying bulk tasks", "error", err)
 		return
 	}
 
@@ -62,8 +60,8 @@ func DeleteJobRuns(orm *orm.ORM, bulkQuery *models.BulkDeleteRunRequest) error {
 	err := orm.DB.
 		// reduce memory consumption by limiting fields in lieu of pagination as stopgap.
 		Select("id, status").
-		Where("status IN (?)", bulkQuery.Status).
-		Where("updated_at > ?", bulkQuery.UpdatedBefore).
+		Where("status IN (?)", bulkQuery.Status.ToStrings()).
+		Where("updated_at < ?", bulkQuery.UpdatedBefore).
 		Order("completed_at asc").
 		Find(&runIDs).Error
 

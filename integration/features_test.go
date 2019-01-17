@@ -566,14 +566,13 @@ func TestIntegration_BulkDeleteRuns(t *testing.T) {
 	job, initiator := cltest.NewJobWithWebInitiator()
 	completedRun := job.NewRun(initiator)
 	completedRun.Status = models.RunStatusCompleted
-	completedRun.UpdatedAt = cltest.ParseISO8601("2018-11-02T10:14:18Z")
-	err := app.GetStore().ORM.DB.Save(&completedRun).Error
+	err := app.GetStore().SaveJobRun(&completedRun)
 	assert.NoError(t, err)
 
 	client := app.NewHTTPClient()
 	request := `{
 		"status": ["completed", "errored"],
-		"updatedBefore": "2018-11-28T21:24:03Z"
+		"updatedBefore": "2100-11-28T21:24:03Z"
 	}`
 	resp, cleanup := client.Post("/v2/bulk_delete_runs", bytes.NewBufferString(request))
 	defer cleanup()
