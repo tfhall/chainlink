@@ -111,14 +111,17 @@ func (l *Link) Scan(value interface{}) error {
 	switch temp := value.(type) {
 	case []uint8: // despite being sent as string, drivers return []uint8
 		s = string(temp)
+		_, ok := l.SetString(s, 10)
+		if !ok {
+			return fmt.Errorf("Unable to scan Link string from %s", s)
+		}
+	case int64:
+		l.SetInt64(temp)
+		return nil
 	default:
 		return fmt.Errorf("Unable to convert %v of %T to Link", value, value)
 	}
 
-	_, ok := l.SetString(s, 10)
-	if !ok {
-		return fmt.Errorf("Unable to scan Link string from %s", s)
-	}
 	return nil
 }
 

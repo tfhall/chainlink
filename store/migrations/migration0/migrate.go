@@ -28,6 +28,7 @@ func (m Migration) Migrate(orm *orm.ORM) error {
 	err = multierr.Append(err, migrationHelper(orm, &models.IndexableBlockNumber{}))
 	err = multierr.Append(err, migrationHelper(orm, &models.User{}))
 	err = multierr.Append(err, migrationHelper(orm, &models.Session{}))
+	err = multierr.Append(err, migrationHelper(orm, &models.Encumbrance{}))
 	err = multierr.Append(err, migrationHelper(orm, &models.ServiceAgreement{}))
 	err = multierr.Append(err, migrationHelper(orm, &models.BulkDeleteRunTask{}))
 	err = multierr.Append(err, migrationHelper(orm, &models.BulkDeleteRunRequest{}))
