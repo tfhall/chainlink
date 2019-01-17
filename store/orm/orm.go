@@ -574,7 +574,7 @@ func (orm *ORM) LastHead() (*models.IndexableBlockNumber, error) {
 
 // DeleteStaleSessions deletes all sessions before the passed time.
 func (orm *ORM) DeleteStaleSessions(before time.Time) error {
-	return orm.DB.Where("last_used > ?", before).Delete(models.Session{}).Error
+	return orm.DB.Where("last_used < ?", before).Delete(models.Session{}).Error
 }
 
 func (orm *ORM) SaveBulkDeleteRunTask(task *models.BulkDeleteRunTask) error {
