@@ -94,7 +94,7 @@ func (orm *ORM) PendingBridgeType(jr models.JobRun) (models.BridgeType, error) {
 // FindJob looks up a Job by its ID.
 func (orm *ORM) FindJob(id string) (models.JobSpec, error) {
 	var job models.JobSpec
-	return job, multify(orm.DB.Set("gorm:auto_preload", true).First(&job, "id = ?", id))
+	return job, multify(orm.preloadJobs().First(&job, "id = ?", id))
 }
 
 // FindInitiator returns the single initiator defined by the passed ID.
@@ -106,7 +106,9 @@ func (orm *ORM) FindInitiator(ID string) (models.Initiator, error) {
 func (orm *ORM) preloadJobs() *gorm.DB {
 	return orm.DB.
 		Preload("Tasks").
-		Preload("Initiators")
+		Preload("Initiators", func(db *gorm.DB) *gorm.DB {
+			return db.Order("initiators.created_at asc")
+		})
 }
 
 func (orm *ORM) preloadJobRuns() *gorm.DB {

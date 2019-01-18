@@ -49,6 +49,7 @@ func TestORM_SaveJob(t *testing.T) {
 
 	j2, err := store.FindJob(j1.ID)
 	assert.NoError(t, err)
+	j1.Initiators[0].CreatedAt = j2.Initiators[0].CreatedAt
 	assert.Equal(t, j1.ID, j2.ID)
 	assert.Equal(t, j1.Initiators[0], j2.Initiators[0])
 	assert.Equal(t, j2.ID, j2.Initiators[0].JobSpecID)
@@ -67,6 +68,7 @@ func TestORM_SaveJobRun(t *testing.T) {
 
 	jr2, err := store.FindJobRun(jr1.ID)
 	assert.NoError(t, err)
+	jr1.Initiator.CreatedAt = jr2.Initiator.CreatedAt
 	assert.Equal(t, jr1.ID, jr2.ID)
 	assert.Equal(t, jr1.Initiator, jr2.Initiator)
 	assert.Equal(t, job.ID, jr2.Initiator.JobSpecID)

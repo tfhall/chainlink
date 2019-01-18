@@ -711,21 +711,21 @@ func TestTxManager_CreateTxWithGas(t *testing.T) {
 	})
 	assert.NoError(t, app.StartAndConnect())
 
-	customGasPrice := big.NewInt(1337)
+	customGasPrice := models.NewBig(big.NewInt(1337))
 	customGasLimit := uint64(10009)
 
 	tests := []struct {
 		name             string
 		dev              bool
-		gasPrice         *big.Int
+		gasPrice         *models.Big
 		gasLimit         uint64
-		expectedGasPrice *big.Int
+		expectedGasPrice *models.Big
 		expectedGasLimit uint64
 	}{
 		{"dev", true, customGasPrice, customGasLimit, customGasPrice, customGasLimit},
-		{"dev but not set", true, nil, 0, store.Config.EthGasPriceDefault(), strpkg.DefaultGasLimit},
-		{"not dev", false, customGasPrice, customGasLimit, store.Config.EthGasPriceDefault(), strpkg.DefaultGasLimit},
-		{"not dev not set", false, nil, 0, store.Config.EthGasPriceDefault(), strpkg.DefaultGasLimit},
+		{"dev but not set", true, nil, 0, models.NewBig(store.Config.EthGasPriceDefault()), strpkg.DefaultGasLimit},
+		{"not dev", false, customGasPrice, customGasLimit, models.NewBig(store.Config.EthGasPriceDefault()), strpkg.DefaultGasLimit},
+		{"not dev not set", false, nil, 0, models.NewBig(store.Config.EthGasPriceDefault()), strpkg.DefaultGasLimit},
 	}
 
 	for _, test := range tests {
@@ -736,7 +736,7 @@ func TestTxManager_CreateTxWithGas(t *testing.T) {
 				ethMock.Register("eth_blockNumber", utils.Uint64ToHex(1))
 			})
 
-			tx, err := manager.CreateTxWithGas(to, data, test.gasPrice, test.gasLimit)
+			tx, err := manager.CreateTxWithGas(to, data, test.gasPrice.ToInt(), test.gasLimit)
 			assert.NoError(t, err)
 			assert.Equal(t, test.expectedGasLimit, tx.GasLimit)
 

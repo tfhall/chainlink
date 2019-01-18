@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	"github.com/smartcontractkit/chainlink/utils"
 )
 
@@ -38,7 +37,7 @@ func (t *BulkTaskStatus) Scan(value interface{}) error {
 
 // BulkDeleteRunRequest describes the query for deletion of runs
 type BulkDeleteRunRequest struct {
-	gorm.Model
+	ID            uint                `gorm:"primary_key"`
 	Status        RunStatusCollection `json:"status" gorm:"type:text"`
 	UpdatedBefore time.Time           `json:"updatedBefore"`
 }

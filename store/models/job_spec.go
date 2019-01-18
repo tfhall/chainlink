@@ -182,6 +182,7 @@ type Initiator struct {
 	// Type is one of the Initiator* string constants defined just above.
 	Type            string `json:"type" gorm:"index;not null"`
 	InitiatorParams `json:"params,omitempty"`
+	CreatedAt       time.Time
 }
 
 // InitiatorParams is a collection of the possible parameters that different

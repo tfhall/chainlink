@@ -184,10 +184,17 @@ func TestValidateServiceAgreement(t *testing.T) {
 		{"before allowed end at", basic.Add("endAt", "2018-06-19T22:17:19Z"), true},
 		{"more than one initiator should fail",
 			basic.Add("initiators",
-				[]models.Initiator{
-					{utils.NewBytes32ID(), "", models.InitiatorServiceAgreementExecutionLog,
-						models.InitiatorParams{}},
-					{utils.NewBytes32ID(), "", models.InitiatorWeb, models.InitiatorParams{}},
+				[]models.Initiator{{
+					ID:              utils.NewBytes32ID(),
+					JobSpecID:       "",
+					Type:            models.InitiatorServiceAgreementExecutionLog,
+					InitiatorParams: models.InitiatorParams{},
+				}, {
+					ID:              utils.NewBytes32ID(),
+					JobSpecID:       "",
+					Type:            models.InitiatorWeb,
+					InitiatorParams: models.InitiatorParams{},
+				},
 				}),
 			true},
 	}
