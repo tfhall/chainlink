@@ -142,7 +142,11 @@ type JSON struct {
 }
 
 func (j JSON) Value() (driver.Value, error) {
-	return j.String(), nil
+	s := j.String()
+	if len(s) == 0 {
+		return "{}", nil
+	}
+	return s, nil
 }
 
 func (j *JSON) Scan(value interface{}) error {
@@ -180,7 +184,7 @@ func (j *JSON) UnmarshalJSON(b []byte) error {
 // MarshalJSON returns the JSON data if it already exists, returns
 // an empty JSON object as bytes if not.
 func (j JSON) MarshalJSON() ([]byte, error) {
-	if j.Exists() && j.String() != "" {
+	if j.Exists() {
 		return j.Bytes(), nil
 	}
 	return []byte("{}"), nil

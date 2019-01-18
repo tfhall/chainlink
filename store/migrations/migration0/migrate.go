@@ -15,7 +15,7 @@ func (m Migration) Timestamp() string {
 }
 
 func (m Migration) Migrate(orm *orm.ORM) error {
-	orm.DB.LogMode(true)
+	// orm.DB.LogMode(true) to trace sql commands
 	var err error
 	err = multierr.Append(err, migrationHelper(orm, &models.JobSpec{}))
 	err = multierr.Append(err, migrationHelper(orm, &models.TaskSpec{}))

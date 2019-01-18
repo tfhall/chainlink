@@ -239,8 +239,11 @@ type EthSubscription interface {
 type Big big.Int
 
 func NewBig(i *big.Int) *Big {
-	b := Big(*i)
-	return &b
+	if i != nil {
+		b := Big(*i)
+		return &b
+	}
+	return nil
 }
 
 func (b Big) Value() (driver.Value, error) {

@@ -70,7 +70,7 @@ func TestIntegration_HelloWorld(t *testing.T) {
 
 	eth.Context("ethTx.Perform()#1 at block 23456", func(eth *cltest.EthMock) {
 		eth.Register("eth_blockNumber", utils.Uint64ToHex(sentAt))
-		eth.Register("eth_sendRawTransaction", attempt1Hash)
+		eth.Register("eth_sendRawTransaction", attempt1Hash) // Initial tx attempt sent
 		eth.Register("eth_blockNumber", utils.Uint64ToHex(sentAt))
 		eth.Register("eth_getTransactionReceipt", unconfirmedReceipt)
 	})
@@ -81,7 +81,7 @@ func TestIntegration_HelloWorld(t *testing.T) {
 	eth.Context("ethTx.Perform()#2 at block 23459", func(eth *cltest.EthMock) {
 		eth.Register("eth_blockNumber", utils.Uint64ToHex(confirmed-1))
 		eth.Register("eth_getTransactionReceipt", unconfirmedReceipt)
-		eth.Register("eth_sendRawTransaction", attempt2Hash)
+		eth.Register("eth_sendRawTransaction", attempt2Hash) // Gas bumped tx attempt sent
 	})
 	newHeads <- models.BlockHeader{Number: cltest.BigHexInt(confirmed - 1)} // 23459: For Gas Bump
 	eth.EventuallyAllCalled(t)
@@ -99,8 +99,7 @@ func TestIntegration_HelloWorld(t *testing.T) {
 	eth.Context("ethTx.Perform()#4 at block 23465", func(eth *cltest.EthMock) {
 		eth.Register("eth_blockNumber", utils.Uint64ToHex(safe))
 		eth.Register("eth_getTransactionReceipt", unconfirmedReceipt)
-		eth.Register("eth_sendRawTransaction", attempt2Hash)
-		eth.Register("eth_getTransactionReceipt", confirmedReceipt)
+		eth.Register("eth_getTransactionReceipt", confirmedReceipt) // confirmed for gas bumped txat
 	})
 	newHeads <- models.BlockHeader{Number: cltest.BigHexInt(safe)} // 23465
 	eth.EventuallyAllCalled(t)
