@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"math"
+	"math/big"
 	"testing"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/smartcontractkit/chainlink/adapters"
 	"github.com/smartcontractkit/chainlink/internal/cltest"
 	"github.com/smartcontractkit/chainlink/services"
@@ -231,10 +233,10 @@ func TestResumeConfirmingTask(t *testing.T) {
 	assert.Error(t, err)
 
 	// leave in pending if not enough confirmations have been met yet
-	creationHeight := cltest.BigHexInt(0)
+	creationHeight := models.NewBig(big.NewInt(0))
 	run = &models.JobRun{
 		ID:             utils.NewBytes32ID(),
-		CreationHeight: &creationHeight,
+		CreationHeight: creationHeight,
 		Status:         models.RunStatusPendingConfirmations,
 		TaskRuns: []models.TaskRun{models.TaskRun{
 			ID:                   utils.NewBytes32ID(),
@@ -242,15 +244,15 @@ func TestResumeConfirmingTask(t *testing.T) {
 			TaskSpec:             models.TaskSpec{Type: adapters.TaskTypeNoOp},
 		}},
 	}
-	run, err = services.ResumeConfirmingTask(run, store, &creationHeight)
+	hexb := hexutil.Big(*creationHeight.ToInt())
+	run, err = services.ResumeConfirmingTask(run, store, &hexb)
 	assert.NoError(t, err)
 	assert.Equal(t, string(models.RunStatusPendingConfirmations), string(run.Status))
 
 	// input, should go from pending -> in progress and save the input
-	creationHeight = cltest.BigHexInt(0)
 	run = &models.JobRun{
 		ID:             utils.NewBytes32ID(),
-		CreationHeight: &creationHeight,
+		CreationHeight: creationHeight,
 		Status:         models.RunStatusPendingConfirmations,
 		TaskRuns: []models.TaskRun{models.TaskRun{
 			ID:                   utils.NewBytes32ID(),

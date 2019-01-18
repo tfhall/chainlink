@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/smartcontractkit/chainlink/store/assets"
 	"github.com/tidwall/gjson"
 	null "gopkg.in/guregu/null.v3"
@@ -14,21 +13,21 @@ import (
 // JobRun tracks the status of a job by holding its TaskRuns and the
 // Result of each Run.
 type JobRun struct {
-	ID             string       `json:"id" gorm:"primary_key;not null"`
-	JobSpecID      string       `json:"jobId" gorm:"index;not null"`
-	Result         RunResult    `json:"result"`
-	ResultID       uint         `json:"-"`
-	Status         RunStatus    `json:"status" gorm:"index"`
-	TaskRuns       []TaskRun    `json:"taskRuns"`
-	CreatedAt      time.Time    `json:"createdAt"`
-	CompletedAt    null.Time    `json:"completedAt"`
-	UpdatedAt      time.Time    `json:"updatedAt"`
-	Initiator      Initiator    `json:"initiator" gorm:"association_autoupdate:false;association_autocreate:false"`
-	InitiatorID    string       `json:"-"`
-	CreationHeight *hexutil.Big `json:"creationHeight"`
-	ObservedHeight *hexutil.Big `json:"observedHeight"`
-	Overrides      RunResult    `json:"overrides"`
-	OverridesID    uint         `json:"-"`
+	ID             string    `json:"id" gorm:"primary_key;not null"`
+	JobSpecID      string    `json:"jobId" gorm:"index;not null"`
+	Result         RunResult `json:"result"`
+	ResultID       uint      `json:"-"`
+	Status         RunStatus `json:"status" gorm:"index"`
+	TaskRuns       []TaskRun `json:"taskRuns"`
+	CreatedAt      time.Time `json:"createdAt"`
+	CompletedAt    null.Time `json:"completedAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
+	Initiator      Initiator `json:"initiator" gorm:"association_autoupdate:false;association_autocreate:false"`
+	InitiatorID    string    `json:"-"`
+	CreationHeight *Big      `json:"creationHeight"`
+	ObservedHeight *Big      `json:"observedHeight"`
+	Overrides      RunResult `json:"overrides"`
+	OverridesID    uint      `json:"-"`
 }
 
 // GetID returns the ID of this structure for jsonapi serialization.

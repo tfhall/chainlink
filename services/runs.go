@@ -62,8 +62,8 @@ func NewRun(
 
 	run.Overrides = input
 	run = run.ApplyResult(input)
-	run.CreationHeight = currentHeight
-	run.ObservedHeight = currentHeight
+	run.CreationHeight = models.NewBig(currentHeight.ToInt())
+	run.ObservedHeight = models.NewBig(currentHeight.ToInt())
 
 	cost := assets.NewLink(0)
 	for i, taskRun := range run.TaskRuns {
@@ -141,7 +141,7 @@ func ResumeConfirmingTask(
 		return run, fmt.Errorf("Attempting to resume confirming run with no currentBlockHeight %s", run.ID)
 	}
 
-	run.ObservedHeight = currentBlockHeight
+	run.ObservedHeight = models.NewBig(currentBlockHeight.ToInt())
 
 	if meetsMinimumConfirmations(run, currentTaskRun, run.ObservedHeight) {
 		logger.Debugw("Minimum confirmations met, resuming job", []interface{}{
@@ -307,7 +307,7 @@ func performTaskSleep(
 func meetsMinimumConfirmations(
 	run *models.JobRun,
 	taskRun *models.TaskRun,
-	currentHeight *hexutil.Big) bool {
+	currentHeight *models.Big) bool {
 	if run.CreationHeight == nil || currentHeight == nil {
 		return true
 	}

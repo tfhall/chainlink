@@ -64,6 +64,9 @@ func TestORM_SaveJobRun(t *testing.T) {
 	store.SaveJob(&job)
 
 	jr1 := job.NewRun(i)
+	creationHeight := models.NewBig(big.NewInt(0))
+	jr1.CreationHeight = creationHeight
+
 	require.NoError(t, store.SaveJobRun(&jr1))
 
 	jr2, err := store.FindJobRun(jr1.ID)
@@ -71,6 +74,7 @@ func TestORM_SaveJobRun(t *testing.T) {
 	jr1.Initiator.CreatedAt = jr2.Initiator.CreatedAt
 	assert.Equal(t, jr1.ID, jr2.ID)
 	assert.Equal(t, jr1.Initiator, jr2.Initiator)
+	assert.Equal(t, creationHeight.String(), jr2.CreationHeight.String())
 	assert.Equal(t, job.ID, jr2.Initiator.JobSpecID)
 }
 
