@@ -32,7 +32,7 @@ func (m Migration) Migrate(orm *orm.ORM) error {
 	err = multierr.Append(err, migrationHelper(orm, &models.ServiceAgreement{}))
 	err = multierr.Append(err, migrationHelper(orm, &models.BulkDeleteRunTask{}))
 	err = multierr.Append(err, migrationHelper(orm, &models.BulkDeleteRunRequest{}))
-	orm.DB.LogMode(true)
+	//orm.DB.LogMode(true)
 	return err
 }
 

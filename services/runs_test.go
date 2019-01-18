@@ -236,7 +236,11 @@ func TestResumeConfirmingTask(t *testing.T) {
 		ID:             utils.NewBytes32ID(),
 		CreationHeight: &creationHeight,
 		Status:         models.RunStatusPendingConfirmations,
-		TaskRuns:       []models.TaskRun{models.TaskRun{MinimumConfirmations: 2, TaskSpec: models.TaskSpec{Type: adapters.TaskTypeNoOp}}},
+		TaskRuns: []models.TaskRun{models.TaskRun{
+			ID:                   utils.NewBytes32ID(),
+			MinimumConfirmations: 2,
+			TaskSpec:             models.TaskSpec{Type: adapters.TaskTypeNoOp},
+		}},
 	}
 	run, err = services.ResumeConfirmingTask(run, store, &creationHeight)
 	assert.NoError(t, err)
@@ -248,7 +252,11 @@ func TestResumeConfirmingTask(t *testing.T) {
 		ID:             utils.NewBytes32ID(),
 		CreationHeight: &creationHeight,
 		Status:         models.RunStatusPendingConfirmations,
-		TaskRuns:       []models.TaskRun{models.TaskRun{MinimumConfirmations: 1, TaskSpec: models.TaskSpec{Type: adapters.TaskTypeNoOp}}},
+		TaskRuns: []models.TaskRun{models.TaskRun{
+			ID:                   utils.NewBytes32ID(),
+			MinimumConfirmations: 1,
+			TaskSpec:             models.TaskSpec{Type: adapters.TaskTypeNoOp},
+		}},
 	}
 	observedHeight := cltest.BigHexInt(1)
 	run, err = services.ResumeConfirmingTask(run, store, &observedHeight)
@@ -270,11 +278,15 @@ func TestResumeConnectingTask(t *testing.T) {
 	run, err = services.ResumeConnectingTask(run, store)
 	assert.Error(t, err)
 
+	taskSpec := models.TaskSpec{Type: adapters.TaskTypeNoOp}
 	// input, should go from pending -> in progress and save the input
 	run = &models.JobRun{
-		ID:       utils.NewBytes32ID(),
-		Status:   models.RunStatusPendingConnection,
-		TaskRuns: []models.TaskRun{models.TaskRun{TaskSpec: models.TaskSpec{Type: adapters.TaskTypeNoOp}}},
+		ID:     utils.NewBytes32ID(),
+		Status: models.RunStatusPendingConnection,
+		TaskRuns: []models.TaskRun{models.TaskRun{
+			ID:       utils.NewBytes32ID(),
+			TaskSpec: taskSpec,
+		}},
 	}
 	run, err = services.ResumeConnectingTask(run, store)
 	assert.NoError(t, err)
@@ -304,9 +316,12 @@ func TestQueueSleepingTask(t *testing.T) {
 
 	// reject a run that is sleeping but its task is not
 	run = &models.JobRun{
-		ID:       utils.NewBytes32ID(),
-		Status:   models.RunStatusPendingSleep,
-		TaskRuns: []models.TaskRun{models.TaskRun{TaskSpec: models.TaskSpec{Type: adapters.TaskTypeSleep}}},
+		ID:     utils.NewBytes32ID(),
+		Status: models.RunStatusPendingSleep,
+		TaskRuns: []models.TaskRun{models.TaskRun{
+			ID:       utils.NewBytes32ID(),
+			TaskSpec: models.TaskSpec{Type: adapters.TaskTypeSleep},
+		}},
 	}
 	run, err = services.QueueSleepingTask(run, store)
 	assert.Error(t, err)
@@ -318,6 +333,7 @@ func TestQueueSleepingTask(t *testing.T) {
 		Status: models.RunStatusPendingSleep,
 		TaskRuns: []models.TaskRun{
 			models.TaskRun{
+				ID:     utils.NewBytes32ID(),
 				Status: models.RunStatusPendingSleep,
 				TaskSpec: models.TaskSpec{
 					Type:   adapters.TaskTypeSleep,
@@ -333,9 +349,13 @@ func TestQueueSleepingTask(t *testing.T) {
 
 	// mark run as pending, task as completed if duration has already elapsed
 	run = &models.JobRun{
-		ID:       utils.NewBytes32ID(),
-		Status:   models.RunStatusPendingSleep,
-		TaskRuns: []models.TaskRun{models.TaskRun{Status: models.RunStatusPendingSleep, TaskSpec: models.TaskSpec{Type: adapters.TaskTypeSleep}}},
+		ID:     utils.NewBytes32ID(),
+		Status: models.RunStatusPendingSleep,
+		TaskRuns: []models.TaskRun{models.TaskRun{
+			ID:       utils.NewBytes32ID(),
+			Status:   models.RunStatusPendingSleep,
+			TaskSpec: models.TaskSpec{Type: adapters.TaskTypeSleep},
+		}},
 	}
 	run, err = services.QueueSleepingTask(run, store)
 	assert.NoError(t, err)
@@ -357,6 +377,7 @@ func TestQueueSleepingTask(t *testing.T) {
 		Status: models.RunStatusPendingSleep,
 		TaskRuns: []models.TaskRun{
 			models.TaskRun{
+				ID:     utils.NewBytes32ID(),
 				Status: models.RunStatusPendingSleep,
 				TaskSpec: models.TaskSpec{
 					Type:   adapters.TaskTypeSleep,

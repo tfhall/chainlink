@@ -151,7 +151,6 @@ func (rm *jobRunner) workerLoop(runID string, workerChannel chan struct{}) {
 		select {
 		case <-workerChannel:
 			run, err := rm.store.FindJobRun(runID)
-			fmt.Println("---- Found job run in worker loop: ", run)
 			if err != nil {
 				logger.Errorw(fmt.Sprint("Error finding run ", runID), run.ForLogger("error", err)...)
 			}
@@ -199,14 +198,10 @@ func prepareTaskInput(run *models.JobRun, currentTaskRun *models.TaskRun) (model
 
 func executeTask(run *models.JobRun, currentTaskRun *models.TaskRun, store *store.Store) models.RunResult {
 	var err error
-	fmt.Println("=== private executeTaskRun", currentTaskRun)
-	fmt.Println("=== private executeTaskSpec", currentTaskRun.TaskSpec)
-	fmt.Println("=== private executeTaskSpec Type", currentTaskRun.TaskSpec.Type)
 	if currentTaskRun.TaskSpec.Params, err = currentTaskRun.TaskSpec.Params.Merge(run.Overrides.Data); err != nil {
 		return currentTaskRun.Result.WithError(err)
 	}
 
-	fmt.Println("=== fetching adapters for: ", currentTaskRun, currentTaskRun.TaskSpec)
 	adapter, err := adapters.For(currentTaskRun.TaskSpec, store)
 	if err != nil {
 		return currentTaskRun.Result.WithError(err)
@@ -248,7 +243,6 @@ func executeRun(run *models.JobRun, store *store.Store) (*models.JobRun, error) 
 
 	currentTaskRun = currentTaskRun.ApplyResult(result)
 	run.TaskRuns[currentTaskRunIndex] = currentTaskRun
-	fmt.Println("---- applying result: ", result)
 	*run = run.ApplyResult(result)
 
 	if currentTaskRun.Status.PendingSleep() {

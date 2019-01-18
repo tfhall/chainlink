@@ -101,12 +101,10 @@ func (*Link) Symbol() string {
 
 func (l Link) Value() (driver.Value, error) {
 	b := (big.Int)(l)
-	fmt.Println("--- Link serializing as: ", b.String())
 	return b.String(), nil
 }
 
 func (l *Link) Scan(value interface{}) error {
-	fmt.Println("--- Link trying to scan: ", value)
 	var s string
 	switch temp := value.(type) {
 	case []uint8: // despite being sent as string, drivers return []uint8

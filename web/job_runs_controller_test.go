@@ -225,7 +225,6 @@ func TestJobRunsController_Update_Success(t *testing.T) {
 	assert.Equal(t, jr.ID, jrID)
 
 	jr = cltest.WaitForJobRunToComplete(t, app.Store, jr)
-	fmt.Println("--- got back job run: ", jr)
 	val, err := jr.Result.Value()
 	assert.NoError(t, err)
 	assert.Equal(t, "100", val)

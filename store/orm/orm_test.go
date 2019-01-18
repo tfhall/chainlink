@@ -307,7 +307,6 @@ func TestORM_PendingBridgeType_alreadyCompleted(t *testing.T) {
 	run := job.NewRun(initr)
 	assert.NoError(t, store.SaveJobRun(&run))
 
-	fmt.Println("--- RunChannel.Send: ", run.ID)
 	store.RunChannel.Send(run.ID)
 	cltest.WaitForJobRunStatus(t, store, run, models.RunStatusCompleted)
 
@@ -323,7 +322,6 @@ func TestORM_PendingBridgeType_success(t *testing.T) {
 
 	bt := cltest.NewBridgeType()
 	assert.NoError(t, store.SaveBridgeType(&bt))
-	fmt.Println("--- trying to save bridge type: ", bt, " with contract payment: ", bt.MinimumContractPayment)
 
 	job, initr := cltest.NewJobWithWebInitiator()
 	job.Tasks = []models.TaskSpec{models.TaskSpec{Type: bt.Name}}
@@ -331,7 +329,6 @@ func TestORM_PendingBridgeType_success(t *testing.T) {
 
 	unfinishedRun := job.NewRun(initr)
 	retrievedBt, err := store.PendingBridgeType(unfinishedRun)
-	fmt.Println("--- got bt: ", retrievedBt, "with err: ", err)
 	assert.NoError(t, err)
 	assert.Equal(t, bt, retrievedBt)
 }

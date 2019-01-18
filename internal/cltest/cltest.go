@@ -599,7 +599,6 @@ func CreateJobRunViaWeb(t *testing.T, app *TestApplication, j models.JobSpec, bo
 	if len(body) > 0 {
 		bodyBuffer = bytes.NewBufferString(body[0])
 	}
-	fmt.Println("--- sending: ", bodyBuffer)
 	client := app.NewHTTPClient()
 	resp, cleanup := client.Post("/v2/specs/"+j.ID+"/runs", bodyBuffer)
 	defer cleanup()
@@ -877,7 +876,6 @@ func AssertValidHash(t *testing.T, length int, hash string) {
 // AssertServerResponse is used to match against a client response, will print
 // any errors returned if the request fails.
 func AssertServerResponse(t *testing.T, resp *http.Response, expectedStatusCode int) {
-	fmt.Println("--- got that response", resp)
 	if resp.StatusCode == expectedStatusCode {
 		return
 	}

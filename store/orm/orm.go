@@ -103,7 +103,13 @@ func (orm *ORM) FindInitiator(ID string) (models.Initiator, error) {
 	return initr, multify(orm.DB.Set("gorm:auto_preload", true).First(&initr, "id = ?", ID))
 }
 
-func (orm *ORM) preloadedJobRuns() *gorm.DB {
+func (orm *ORM) preloadJobs() *gorm.DB {
+	return orm.DB.
+		Preload("Tasks").
+		Preload("Initiators")
+}
+
+func (orm *ORM) preloadJobRuns() *gorm.DB {
 	return orm.DB.
 		Preload("Initiator").
 		Preload("Overrides").
@@ -116,7 +122,7 @@ func (orm *ORM) preloadedJobRuns() *gorm.DB {
 // FindJobRun looks up a JobRun by its ID.
 func (orm *ORM) FindJobRun(id string) (models.JobRun, error) {
 	var jr models.JobRun
-	err := orm.preloadedJobRuns().First(&jr, "id = ?", id).Error
+	err := orm.preloadJobRuns().First(&jr, "id = ?", id).Error
 	return jr, err
 }
 
@@ -133,12 +139,14 @@ func (orm *ORM) FindServiceAgreement(id string) (models.ServiceAgreement, error)
 
 // Jobs fetches all jobs.
 func (orm *ORM) Jobs(cb func(models.JobSpec) bool) error {
-	db := orm.DB
 	offset := 0
 	limit := 1000
 	for {
 		jobs := []models.JobSpec{}
-		err := multify(db.Limit(limit).Offset(offset).Find(&jobs))
+		err := orm.preloadJobs().
+			Limit(limit).
+			Offset(offset).
+			Find(&jobs).Error
 		if err != nil {
 			return err
 		}
@@ -160,7 +168,7 @@ func (orm *ORM) Jobs(cb func(models.JobSpec) bool) error {
 // sorted by their created at time.
 func (orm *ORM) JobRunsFor(jobSpecID string) ([]models.JobRun, error) {
 	runs := []models.JobRun{}
-	err := orm.preloadedJobRuns().
+	err := orm.preloadJobRuns().
 		Where("job_spec_id = ?", jobSpecID).
 		Order("created_at desc").
 		Find(&runs).Error
@@ -202,7 +210,7 @@ func (orm *ORM) SaveServiceAgreement(sa *models.ServiceAgreement) error {
 // JobRunsWithStatus returns the JobRuns which have the passed statuses.
 func (orm *ORM) JobRunsWithStatus(statuses ...models.RunStatus) ([]models.JobRun, error) {
 	runs := []models.JobRun{}
-	err := orm.preloadedJobRuns().Where("status IN (?)", statuses).Find(&runs).Error
+	err := orm.preloadJobRuns().Where("status IN (?)", statuses).Find(&runs).Error
 	return runs, err
 }
 
@@ -443,7 +451,7 @@ func (s SortType) String() string {
 // to the passed parameters.
 func (orm *ORM) JobsSorted(order SortType, offset int, limit int) ([]models.JobSpec, int, error) {
 	var count int
-	err := orm.DB.Model(&models.JobSpec{}).Count(&count).Error
+	err := orm.preloadJobs().Model(&models.JobSpec{}).Count(&count).Error
 	if err != nil {
 		return nil, 0, err
 	}
@@ -503,7 +511,7 @@ func (orm *ORM) JobRunsSorted(order SortType, offset int, limit int) ([]models.J
 	}
 
 	var runs []models.JobRun
-	rval := orm.preloadedJobRuns().
+	rval := orm.preloadJobRuns().
 		Order(fmt.Sprintf("created_at %s", order.String())).
 		Limit(limit).Offset(offset).Find(&runs)
 	return runs, count, multifyWithoutRecordNotFound(rval)
@@ -518,7 +526,7 @@ func (orm *ORM) JobRunsSortedFor(id string, order SortType, offset int, limit in
 	}
 
 	var runs []models.JobRun
-	rval := orm.preloadedJobRuns().
+	rval := orm.preloadJobRuns().
 		Order(fmt.Sprintf("created_at %s", order.String())).
 		Limit(limit).Offset(offset).Find(&runs)
 	return runs, count, multifyWithoutRecordNotFound(rval)
@@ -572,8 +580,11 @@ func (orm *ORM) SaveHead(n *models.IndexableBlockNumber) error {
 // LastHead returns the last ordered IndexableBlockNumber.
 func (orm *ORM) LastHead() (*models.IndexableBlockNumber, error) {
 	number := &models.IndexableBlockNumber{}
-	rval := orm.DB.Order("digits desc, number desc").First(number)
-	return number, multifyWithoutRecordNotFound(rval)
+	err := orm.DB.Order("digits desc, number desc").First(number).Error
+	if err == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+	return number, err
 }
 
 // DeleteStaleSessions deletes all sessions before the passed time.
