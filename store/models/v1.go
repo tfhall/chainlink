@@ -200,9 +200,7 @@ func ConvertToAssignment(j JobSpec) (AssignmentSpec, error) {
 	var merr error
 
 	a, err := buildAssignment(j.Tasks)
-	if err != nil {
-		multierr.Append(merr, err)
-	}
+	merr = multierr.Append(merr, err)
 
 	s := buildScheduleFromJobSpec(j)
 

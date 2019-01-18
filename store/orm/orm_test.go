@@ -268,7 +268,7 @@ func TestORM_FindBridge(t *testing.T) {
 	bt := models.BridgeType{}
 	bt.Name = models.MustNewTaskType("solargridreporting")
 	bt.URL = cltest.WebURL("https://denergy.eth")
-	assert.NoError(t, store.SaveBridgeType(&bt))
+	assert.NoError(t, store.CreateBridgeType(&bt))
 
 	cases := []struct {
 		description string
@@ -300,7 +300,7 @@ func TestORM_PendingBridgeType_alreadyCompleted(t *testing.T) {
 	jobRunner.Start()
 
 	bt := cltest.NewBridgeType()
-	assert.NoError(t, store.SaveBridgeType(&bt))
+	assert.NoError(t, store.CreateBridgeType(&bt))
 
 	job, initr := cltest.NewJobWithWebInitiator()
 	assert.NoError(t, store.SaveJob(&job))
@@ -322,7 +322,7 @@ func TestORM_PendingBridgeType_success(t *testing.T) {
 	defer cleanup()
 
 	bt := cltest.NewBridgeType()
-	assert.NoError(t, store.SaveBridgeType(&bt))
+	assert.NoError(t, store.CreateBridgeType(&bt))
 
 	job, initr := cltest.NewJobWithWebInitiator()
 	job.Tasks = []models.TaskSpec{models.TaskSpec{Type: bt.Name}}

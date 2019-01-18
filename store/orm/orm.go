@@ -575,9 +575,14 @@ func (orm *ORM) SaveSession(session *models.Session) error {
 	return orm.DB.Save(session).Error
 }
 
-// SaveBridgeType saves the bridge type.
-func (orm *ORM) SaveBridgeType(bt *models.BridgeType) error {
-	return orm.DB.Save(bt).Error
+// CreateBridgeType saves the bridge type.
+func (orm *ORM) CreateBridgeType(bt *models.BridgeType) error {
+	return orm.DB.Create(bt).Error
+}
+
+// UpdateBridgeType updates the bridge type.
+func (orm *ORM) UpdateBridgeType(bt *models.BridgeType) error {
+	return orm.DB.Model(bt).Updates(bt).Error
 }
 
 // SaveTx saves the transaction.

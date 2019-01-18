@@ -207,7 +207,7 @@ func TestJobRunsController_Update_Success(t *testing.T) {
 	defer cleanup()
 
 	bt := cltest.NewBridgeType()
-	assert.Nil(t, app.Store.SaveBridgeType(&bt))
+	assert.Nil(t, app.Store.CreateBridgeType(&bt))
 	j, initr := cltest.NewJobWithWebInitiator()
 	j.Tasks = []models.TaskSpec{{Type: bt.Name}}
 	assert.Nil(t, app.Store.SaveJob(&j))
@@ -238,7 +238,7 @@ func TestJobRunsController_Update_WrongAccessToken(t *testing.T) {
 	client := app.NewHTTPClient()
 
 	bt := cltest.NewBridgeType()
-	assert.Nil(t, app.Store.SaveBridgeType(&bt))
+	assert.Nil(t, app.Store.CreateBridgeType(&bt))
 	j, initr := cltest.NewJobWithWebInitiator()
 	j.Tasks = []models.TaskSpec{{Type: bt.Name}}
 	assert.Nil(t, app.Store.SaveJob(&j))
@@ -263,7 +263,7 @@ func TestJobRunsController_Update_NotPending(t *testing.T) {
 	client := app.NewHTTPClient()
 
 	bt := cltest.NewBridgeType()
-	assert.Nil(t, app.Store.SaveBridgeType(&bt))
+	assert.Nil(t, app.Store.CreateBridgeType(&bt))
 	j, initr := cltest.NewJobWithWebInitiator()
 	j.Tasks = []models.TaskSpec{{Type: bt.Name}}
 	assert.Nil(t, app.Store.SaveJob(&j))
@@ -285,7 +285,7 @@ func TestJobRunsController_Update_WithError(t *testing.T) {
 	client := app.NewHTTPClient()
 
 	bt := cltest.NewBridgeType()
-	assert.Nil(t, app.Store.SaveBridgeType(&bt))
+	assert.Nil(t, app.Store.CreateBridgeType(&bt))
 	j, initr := cltest.NewJobWithWebInitiator()
 	j.Tasks = []models.TaskSpec{{Type: bt.Name}}
 	assert.Nil(t, app.Store.SaveJob(&j))
@@ -313,7 +313,7 @@ func TestJobRunsController_Update_WithMergeError(t *testing.T) {
 	defer cleanup()
 
 	bt := cltest.NewBridgeType()
-	assert.Nil(t, app.Store.SaveBridgeType(&bt))
+	assert.Nil(t, app.Store.CreateBridgeType(&bt))
 	j, initr := cltest.NewJobWithWebInitiator()
 	j.Tasks = []models.TaskSpec{{Type: bt.Name}}
 	assert.Nil(t, app.Store.SaveJob(&j))
@@ -343,7 +343,7 @@ func TestJobRunsController_Update_BadInput(t *testing.T) {
 	client := app.NewHTTPClient()
 
 	bt := cltest.NewBridgeType()
-	assert.Nil(t, app.Store.SaveBridgeType(&bt))
+	assert.Nil(t, app.Store.CreateBridgeType(&bt))
 	j, initr := cltest.NewJobWithWebInitiator()
 	j.Tasks = []models.TaskSpec{{Type: bt.Name}}
 	assert.Nil(t, app.Store.SaveJob(&j))
@@ -367,7 +367,7 @@ func TestJobRunsController_Update_NotFound(t *testing.T) {
 	client := app.NewHTTPClient()
 
 	bt := cltest.NewBridgeType()
-	assert.Nil(t, app.Store.SaveBridgeType(&bt))
+	assert.Nil(t, app.Store.CreateBridgeType(&bt))
 	j, initr := cltest.NewJobWithWebInitiator()
 	j.Tasks = []models.TaskSpec{{Type: bt.Name}}
 	assert.Nil(t, app.Store.SaveJob(&j))

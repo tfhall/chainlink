@@ -76,7 +76,7 @@ func TestValidateAdapter(t *testing.T) {
 	bt := models.BridgeType{}
 	bt.Name = models.MustNewTaskType("solargridreporting")
 	bt.URL = cltest.WebURL("https://denergy.eth")
-	assert.NoError(t, store.SaveBridgeType(&bt))
+	assert.NoError(t, store.CreateBridgeType(&bt))
 
 	tests := []struct {
 		description string

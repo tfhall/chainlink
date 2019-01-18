@@ -180,7 +180,7 @@ func (j *JSON) UnmarshalJSON(b []byte) error {
 // MarshalJSON returns the JSON data if it already exists, returns
 // an empty JSON object as bytes if not.
 func (j JSON) MarshalJSON() ([]byte, error) {
-	if j.Exists() {
+	if j.Exists() && j.String() != "" {
 		return j.Bytes(), nil
 	}
 	return []byte("{}"), nil
