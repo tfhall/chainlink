@@ -2,7 +2,6 @@ package orm_test
 
 import (
 	"encoding/hex"
-	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -381,10 +380,12 @@ func TestORM_MarkRan(t *testing.T) {
 	_, initr := cltest.NewJobWithRunAtInitiator(time.Now())
 	assert.NoError(t, store.SaveInitiator(&initr))
 
-	assert.NoError(t, store.MarkRan(&initr))
+	assert.NoError(t, store.MarkRan(&initr, true))
 	ir, err := store.FindInitiator(initr.ID)
 	assert.NoError(t, err)
 	assert.True(t, ir.Ran)
+
+	assert.Error(t, store.MarkRan(&initr, true))
 }
 
 func TestORM_FindUser(t *testing.T) {

@@ -308,8 +308,24 @@ func (orm *ORM) GetLastNonce(address common.Address) (uint64, error) {
 }
 
 // MarkRan will set Ran to true for a given initiator
-func (orm *ORM) MarkRan(i *models.Initiator) error {
-	return multify(orm.DB.Model(i).Update("ran", true))
+func (orm *ORM) MarkRan(i *models.Initiator, ran bool) error {
+	tx := orm.DB.Begin()
+	var newi models.Initiator
+	if err := tx.Select("ran").First(&newi, "ID = ?", i.ID).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	if ran && newi.Ran {
+		return fmt.Errorf("Initiator %v for job spec %s has already been run", i.ID, i.JobSpecID)
+	}
+
+	if err := tx.Model(i).UpdateColumn("ran", ran).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	return tx.Commit().Error
 }
 
 // FindUser will return the one API user, or an error.
